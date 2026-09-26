@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sed -n *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git ls-files*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git commit*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 30,
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */code/web/*.ts|*/code/web/*.tsx|*/code/api/*.ts) svc=\"${f%%/src/*}\"; [ -x \"$svc/node_modules/.bin/eslint\" ] && \"$svc/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; */code/mensageria/*.go) gofmt -w \"$f\" >/dev/null 2>&1;; esac; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}
