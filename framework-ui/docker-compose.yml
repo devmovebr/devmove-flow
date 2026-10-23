@@ -1,0 +1,10 @@
+services:
+  painel:
+    build: .
+    network_mode: host
+    environment:
+      PORT: ${PORT:-4800}
+      DEVMOVE_WORKSPACES: /workspaces
+    volumes:
+      - ${DEVMOVE_WORKSPACES:-..}:/workspaces
+    restart: unless-stopped

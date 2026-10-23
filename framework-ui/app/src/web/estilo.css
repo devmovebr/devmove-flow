@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-fundo: #121012;
+  --color-painel: #181518;
+  --color-superficie: #1e1a1e;
+  --color-superficie-2: #262126;
+  --color-superficie-3: #2f2930;
+  --color-borda: #2a252a;
+  --color-borda-forte: #3a333a;
+
+  --color-texto: #ebe7eb;
+  --color-texto-2: #a29aa1;
+  --color-texto-3: #6e666d;
+
+  --color-acento: #c13a76;
+  --color-acento-forte: #d9488a;
+  --color-acento-suave: #3a1f2d;
+
+  --color-passou: #4caf5c;
+  --color-falhou: #e2504c;
+  --color-pendente: #e8963a;
+  --color-bloqueado: #8b8590;
+  --color-info: #7c8cf0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fundo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-acento) 45%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-superficie-3) transparent;
+}
+
+.campo-variavel textarea,
+.campo-variavel input,
+.campo-variavel pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 20px;
+  letter-spacing: 0;
+  tab-size: 2;
+}

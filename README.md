@@ -58,6 +58,7 @@ Regras completas: `framework/.claude/fluxo.md`.
 |---|---|
 | `framework/` | o harness genérico, com marcadores `{{...}}`. É o que os assistentes instalam |
 | `setup/` | assistentes de implantação e o script de instalação |
+| `framework-ui/` | painel visual do harness (módulo Testes), em Docker |
 | `tools/` | o que mantém o framework: `instancias.txt`, coleta das cópias, checagem de vazamento, registro das melhorias |
 | `.claude/skills/melhoria/` | o `/melhoria` |
 | `demo/` | workspace fictício (Consultto, SaaS de agenda para clínicas) com o framework instalado e o histórico de demandas de cada tipo |
