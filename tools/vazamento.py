@@ -4,12 +4,15 @@
 Uso: python3 tools/vazamento.py [<ref base>]    (padrão: a maior tag v*)
 
 Termos de cada cópia em .instancias/<nome>/ (lidos do git, sem checkout): o nome da cópia e
-o do repositório, ## PROJETO, ## SERVICO e ## REPOS do devmove-valores.md (nome inteiro e
-partes separadas por ponto) e as pastas de doc/produtos, doc/integracoes e doc/servicos.
+o do repositório, ## PROJETO, ## RESPONSAVEL, ## SERVICO, ## TABELA_SERVICOS e ## REPOS do devmove-valores.md,
+as rules de .claude/rules/code/servicos/, os repos de tools/repos.txt e as pastas de
+doc/produtos, doc/integracoes e doc/servicos. Nome com ponto entra inteiro e por parte.
 Os termos ficam só na memória do script.
+Cópia sem devmove-valores.md bloqueia (código 2). Serviço ou repo da cópia que falta no
+arquivo de valores é relatado como desatualizado e entra nos termos mesmo assim.
 Confere as linhas adicionadas em `git diff <ref base>` (rode depois de `git add -A`),
 fora de tools/instancias.txt e tools/melhorias.md.
-Saída: arquivo: termo: trecho, ou "limpo". Código 1 com achado.
+Saída: avisos por cópia, depois arquivo: termo: trecho, ou "limpo". Código 1 com achado.
 """
 import os, re, subprocess, sys
 
@@ -22,31 +25,45 @@ def git(*a):
     return subprocess.run(["git", *a], capture_output=True, text=True).stdout
 
 
-termos = set()
+termos, faltando = set(), False
 for l in open(os.path.join(raiz, "tools", "instancias.txt"), encoding="utf-8"):
     p = l.split()
     if l.startswith("#") or len(p) != 4:
         continue
     nome, url, branch = p[:3]
     pasta, ref = os.path.join(raiz, ".instancias", nome), "origin/" + branch
-    termos |= {nome, re.sub(r"\.git$", "", url.rstrip("/").split("/")[-1])}
+    proprios = {nome, re.sub(r"\.git$", "", url.rstrip("/").split("/")[-1])}
     valores = git("-C", pasta, "show", "%s:devmove-valores.md" % ref)
-    secao = None
+    if not valores.strip():
+        print("%s: sem devmove-valores.md na %s" % (nome, ref)); faltando = True
+    secao, servicos, repos = None, set(), set()
     for v in valores.splitlines():
         m = re.match(r"^## (\S+)(?: (\S+))?", v)
         if m:
             secao = m.group(1)
             if secao == "SERVICO" and m.group(2):
-                termos.add(m.group(2))
+                servicos.add(m.group(2))
             continue
-        if secao == "PROJETO" and v.strip():
-            termos.add(v.strip())
+        if secao in ("PROJETO", "RESPONSAVEL") and v.strip():
+            proprios.add(v.strip())
+        elif secao == "TABELA_SERVICOS" and v.startswith("| `"):
+            servicos.add(v.split("`")[1])
         elif secao == "REPOS" and v.strip():
-            termos.add(v.split()[0])
-            termos |= {s for s in re.split(r"[/:]", v.split()[-1]) if s and "." not in s and "@" not in s}
+            repos.add(v.split()[0].rstrip("/").split("/")[-1])
+            proprios |= set(v.split()[0].split("/"))
+            proprios |= {s for s in re.split(r"[/:]", v.split()[-1]) if s and "." not in s and "@" not in s}
+    # o que a cópia tem e o arquivo de valores não declara: entra nos termos e é relatado
+    regras = {os.path.splitext(f)[0] for f in git("-C", pasta, "ls-tree", "--name-only", "%s:.claude/rules/code/servicos" % ref).split()}
+    clonados = {r.split()[0].rstrip("/").split("/")[-1] for r in git("-C", pasta, "show", "%s:tools/repos.txt" % ref).splitlines()
+                if r.strip() and not r.startswith("#")}
+    sem_valor = sorted((regras - servicos - {"servico"}) | (clonados - repos)) if valores.strip() else []
+    proprios |= servicos | repos | regras | clonados
     for d in ("doc/produtos", "doc/integracoes", "doc/servicos"):
-        termos |= {t.rstrip("/") for t in git("-C", pasta, "ls-tree", "--name-only", "%s:%s" % (ref, d)).split()
-                   if t.endswith("/") or "." not in t}
+        proprios |= {t.rstrip("/") for t in git("-C", pasta, "ls-tree", "--name-only", "%s:%s" % (ref, d)).split()
+                     if "." not in t}
+    if sem_valor:
+        print("%s: devmove-valores.md desatualizado, sem: %s" % (nome, ", ".join(sem_valor)))
+    termos |= proprios
 for t in list(termos):
     termos |= set(t.split("."))
 termos = {t for t in termos if len(t) >= 3 and t.lower() not in GENERICOS}
@@ -64,4 +81,4 @@ for l in diff.splitlines():
         for m in padrao.finditer(l):
             achados.append("%s: %s: %s" % (arquivo, m.group(1), l[1:].strip()[:120]))
 print("\n".join(achados) or "limpo")
-sys.exit(1 if achados else 0)
+sys.exit(2 if faltando else 1 if achados else 0)

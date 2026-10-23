@@ -11,4 +11,5 @@ Dossiê corrente.
 5. Consumo: roda `python3 <workspace>/tools/consumo.py <dossiê>` e cola a linha-resumo no Registro do `CHANGELOG.md`. Saiu `n/d`: usa o registro manual das notificações.
 6. Retro em `.claude/retro.md`, usando o `Início` do `CHANGELOG.md` e os números do `consumo.json`.
 7. Gate final: ajuste reabre o arquivo apontado. Aprovado: `CHANGELOG.md` com `Status: fechada` (o arquivo fica) e a linha no `INDEX.md` do tipo marcada como fechada. Se a retro propôs ajuste no harness, gate separado para ele, cada ajuste com a classe proposta (`[framework]` ou `[local]`); aprovado, aplica e registra no `CHANGELOG.md`.
-8. Commits no repositório do workspace, depois dos gates (aprovar é o pedido de commit): um da demanda, `docs(demandas): <slug>` com `doc/` e `.claude/retro.md`, e um por classe de ajuste de harness, na convenção da seção Git de `.claude/fluxo.md`. Sem push.
+8. `devmove-valores.md`: serviço, repositório, stack, comando ou regra fixa que a demanda criou ou mudou entra nele, junto com os ajustes `[local]` (`.claude/fluxo.md`, Versão do harness).
+9. Commits no repositório do workspace, depois dos gates (aprovar é o pedido de commit): um da demanda, `docs(demandas): <slug>` com `doc/` e `.claude/retro.md`, e um por classe (`devmove-valores.md` vai no `[local]`) de ajuste de harness, na convenção da seção Git de `.claude/fluxo.md`. Sem push.

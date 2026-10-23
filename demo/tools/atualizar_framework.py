@@ -15,7 +15,8 @@ no mesmo trecho vira conflito marcado no arquivo.
 
 Saída, primeira linha: "em dia X", "sem acesso ao framework", "nova X -> Y" (--checar),
 "major X -> Y" (migração assistida, nada aplicado) ou "atualizado X -> Y", seguida de uma
-linha por arquivo: novo, alterado, removido, conflito ou mantido.
+linha por arquivo: novo, alterado, removido, conflito ou mantido. Por último, "aviso" quando
+devmove-valores.md não declara um serviço com rule ou um repositório de tools/repos.txt.
 Código: 0 sem conflito, 1 com conflito, 2 bloqueado.
 """
 import io, os, re, shutil, subprocess, sys, tarfile, tempfile, datetime
@@ -41,6 +42,21 @@ def sair(msg, codigo):
     print(msg); sys.exit(codigo)
 
 
+def avisos_valores():
+    """Serviço com rule ou repositório (pelo nome da pasta) em tools/repos.txt que o arquivo de valores não declara."""
+    texto = open(valores, encoding="utf-8").read()
+    declarados = set(re.findall(r"^## SERVICO (\S+)", texto, re.M)) | set(re.findall(r"^\| `([^`]+)` \|", texto, re.M))
+    secao = re.search(r"^## REPOS\n(.*?)(?=^## |\Z)", texto, re.M | re.S)
+    declarados |= {l.split()[0].rstrip("/").split("/")[-1] for l in (secao.group(1) if secao else "").splitlines() if l.strip()}
+    pasta = os.path.join(ws, ".claude", "rules", "code", "servicos")
+    achados = {os.path.splitext(f)[0] for f in os.listdir(pasta) if f.endswith(".md")} if os.path.isdir(pasta) else set()
+    repos = os.path.join(ws, "tools", "repos.txt")
+    if os.path.isfile(repos):
+        achados |= {l.split()[0].rstrip("/").split("/")[-1] for l in open(repos, encoding="utf-8") if l.strip() and not l.startswith("#")}
+    falta = sorted(achados - declarados - {"servico"})
+    return ["aviso devmove-valores.md desatualizado, sem: " + ", ".join(falta)] if falta else []
+
+
 fluxo = os.path.join(ws, ".claude", "fluxo.md")
 m = MARCA.search(open(fluxo, encoding="utf-8").read())
 if not m:
@@ -63,17 +79,17 @@ else:
     nova = open(os.path.join(fonte, "VERSION"), encoding="utf-8").read().strip()
     ref_nova = None  # árvore de trabalho
 
+valores = os.path.join(ws, "devmove-valores.md")
+if not os.path.isfile(valores):
+    sair("sem devmove-valores.md na raiz do workspace", 2)
 if num(nova) <= num(instalada):
-    sair("em dia " + instalada, 0)
+    sair("\n".join(["em dia " + instalada] + avisos_valores()), 0)
 if checar:
     sair("nova %s -> %s" % (instalada, nova), 0)
 if num(nova)[0] > num(instalada)[0]:
     sair("major %s -> %s: siga a Migração da versão no CHANGELOG do framework" % (instalada, nova), 2)
 if run("git", "-C", fonte, "rev-parse", "-q", "--verify", "v%s^{commit}" % instalada).returncode:
     sair("tag v%s não existe no framework" % instalada, 2)
-valores = os.path.join(ws, "devmove-valores.md")
-if not os.path.isfile(valores):
-    sair("sem devmove-valores.md na raiz do workspace", 2)
 sujo = run("git", "-C", ws, "status", "--porcelain", "--", "CLAUDE.md", ".claude", "tools", text=True).stdout
 if sujo.strip():
     sair("harness com mudança não commitada: commite antes de atualizar\n" + sujo.rstrip(), 2)
@@ -160,5 +176,5 @@ s = open(fluxo, encoding="utf-8").read()
 open(fluxo, "w", encoding="utf-8").write(MARCA.sub("Versão do DevMove Flow: %s (atualizado em %s)." % (nova, hoje), s, count=1))
 shutil.rmtree(tmp, ignore_errors=True)
 print("atualizado %s -> %s" % (instalada, nova))
-print("\n".join(linhas))
+print("\n".join(linhas + avisos_valores()))
 sys.exit(1 if conflitos else 0)

@@ -1,6 +1,6 @@
 # Fluxo de demanda
 
-Versão do DevMove Flow: 2.2.0 (atualizado em 2026-10-23).
+Versão do DevMove Flow: 2.3.0 (atualizado em 2026-10-23).
 
 Lido pelo orquestrador via `/demanda`, `/retomar`, `/qa` e skills de etapa. Agents não leem este arquivo.
 
@@ -157,7 +157,9 @@ O `/demanda` roda `python3 <workspace>/tools/atualizar_framework.py` antes de tu
 - `atualizado` sem conflito: commit `chore(harness): atualiza devmove flow para <versão>` só dos arquivos listados, uma linha a Ana com a versão, e segue.
 - Conflito (código 1): os arquivos têm marcadores `<<<<<<< aqui` / `>>>>>>> framework`. Gate com cada trecho lado a lado; aprovado, resolve, commita como acima e segue.
 - Bloqueado (código 2: major, harness sujo, sem `devmove-valores.md`): uma linha a Ana e segue a demanda na versão atual.
-`devmove-valores.md` na raiz guarda os valores da instalação e é o que permite renderizar cada versão; mudou valor de projeto (serviço novo, comando), atualize nele também.
+- Linha `aviso` de valores desatualizado: entra no `/fechar` desta demanda.
+
+`devmove-valores.md` na raiz fica vivo. Dele saem a renderização de cada versão e a lista de termos que o `/melhoria` do framework nunca deixa sair desta cópia: projeto, responsável, serviços e repositórios. Serviço, repositório, stack, comando ou regra fixa que mudou numa demanda muda nele também, no commit `[local]` do `/fechar`.
 
 ## Mapas: memória compartilhada de código
 

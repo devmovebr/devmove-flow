@@ -4,6 +4,19 @@ Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
 
+## 2.3.0 (2026-10-23)
+
+Origem: a lista de termos proibidos do `/melhoria` depende do `devmove-valores.md` de cada cópia, que envelhecia depois da instalação.
+
+Novidades
+- [ ] `fluxo.md`, Versão do harness: `devmove-valores.md` fica vivo; serviço, repositório, stack, comando ou regra fixa que mudou numa demanda muda nele, no commit `[local]`.
+- [ ] `/fechar`, passo 8: atualiza o `devmove-valores.md`; os commits passam a ser o passo 9.
+- [ ] `tools/atualizar_framework.py` imprime `aviso devmove-valores.md desatualizado` quando uma rule de serviço ou um repositório de `tools/repos.txt` não aparece no arquivo (`## SERVICO`, `## TABELA_SERVICOS` ou `## REPOS`), inclusive quando a versão está em dia.
+
+No repositório do framework
+- `tools/vazamento.py` lê o `devmove-valores.md` de cada cópia a cada execução, somando `## RESPONSAVEL`, `## TABELA_SERVICOS`, as rules de serviço e o `tools/repos.txt`. Cópia sem o arquivo bloqueia a publicação; arquivo desatualizado é relatado.
+- `/melhoria` roda essa checagem no passo 3, antes de mexer em arquivo, mesmo sem commit `[framework]` novo.
+
 ## 2.2.0 (2026-10-23)
 
 Origem: cópias evoluindo pela retro sem caminho de volta para o framework, e framework sem caminho até as cópias.

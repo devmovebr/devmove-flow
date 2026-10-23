@@ -81,7 +81,7 @@ Os três terminam com o harness adaptado ao projeto: nomes, stacks, comandos e r
 O framework evolui pelas retros das cópias.
 
 1. Na cópia, todo ajuste de harness aprovado no `/fechar` vira um commit próprio, separado do commit da demanda: `chore(harness): [framework] <assunto>` quando vale para qualquer projeto, `[local]` quando não.
-2. Aqui, `/melhoria` (rotina semanal) lê as cópias de `tools/instancias.txt` desde a última leitura, absorve em `framework/` os commits `[framework]` na forma genérica, sobe a versão, atualiza o `demo/`, passa o `tools/vazamento.py` e publica commit e tag `v<versão>`. O registro de cada commit lido fica em `tools/melhorias.md`.
+2. Aqui, `/melhoria` (rotina semanal) lê as cópias de `tools/instancias.txt` desde a última leitura, absorve em `framework/` os commits `[framework]` na forma genérica, sobe a versão, atualiza o `demo/`, passa o `tools/vazamento.py` (termos proibidos tirados do `devmove-valores.md` de cada cópia, que a cópia mantém vivo pelo `/fechar`) e publica commit e tag `v<versão>`. O registro de cada commit lido fica em `tools/melhorias.md`.
 3. Cada cópia recebe a versão no próximo `/demanda`.
 
 Versão: major muda estrutura e pede Migração no `CHANGELOG.md` (assistida, `setup/atualizar.md`); minor acrescenta regra, skill, agent ou tool; patch corrige texto.
