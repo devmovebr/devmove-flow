@@ -1,0 +1,7 @@
+.DS_Store
+.env*
+code/*/
+!code/README.md
+code/.revisao/
+tools/.local/*
+!tools/.local/.gitkeep

@@ -28,13 +28,19 @@ framework/
   .claude/
     fluxo.md                 regras do fluxo, lidas só pelo orquestrador
     retro.md                 retro vazia
-    settings.json            permissões base, sem hooks
+    settings.json            modelo do orquestrador, permissões base, sem hooks
     rules/                   principios, escopo, comunicacao, conhecimento, code
-    agents/                  consultor-code, arquiteto, revisor, arquivista, revisor-code, dev (modelo)
+      code/servicos/         modelo de rule por serviço
+    agents/                  caio-consultor-code, theo-arquiteto, vera-revisor, rita-revisor-code,
+                             iris-arquivista, nina-qa, paul-revisor-pr, igor-infra-local, dev (modelo)
     skills/                  demanda, retomar, negocio, tecnico, plano, executar, fechar,
-                             brief, faq, processo, entregavel, novo-agent
+                             qa, revisar-pr, infra, brief, faq, processo, entregavel, ingerir,
+                             mem0, novo-agent
   doc/                       esqueleto de conhecimento com INDEX em cada pasta
+    demandas/                feature, bug, debito-tecnico, qa
+  tools/                     README, clonar-repos.sh, repos.txt, .local/ (fora do git)
   code/                      README
+  .gitignore
 ```
 
 Na instalação, o assistente monta o harness do projeto assim:
@@ -44,14 +50,14 @@ Na instalação, o assistente monta o harness do projeto assim:
 | 1 | escreve `devmove-valores.md` na raiz do workspace com tudo o que levantou na conversa ou no código | assistente |
 | 2 | copia `framework/` inteiro para a raiz do workspace: `framework/.claude/skills/demanda/` vira `<workspace>/.claude/skills/demanda/`, e assim por diante | `instalar.sh` |
 | 3 | preenche os marcadores (`{{PROJETO}}`, `{{RESPONSAVEL}}`, comandos, padrões) com os valores | `instalar.sh --valores` |
-| 4 | transforma o modelo `agents/dev.md` em um agent por stack (`dev-node.md`, `dev-python.md`, `dev-go.md`), apaga o modelo e cria o hook de lint de cada stack | `instalar.sh --valores` |
+| 4 | transforma o modelo `agents/dev.md` em um agent por stack (`allan-dev-node.md`, `sam-dev-python.md`, `greg-dev-go.md`), gera uma rule por serviço em `rules/code/servicos/`, apaga os modelos e cria o hook de lint de cada stack | `instalar.sh --valores` |
 | 5 | cria `doc/servicos/<serviço>/` com INDEX e mapa de cada serviço, e junta harness antigo se houver | assistente |
 
 O preenchimento de `.claude/` fica com o script porque o Claude Code pede aprovação para cada edição do modelo dentro de `.claude/`.
 
 As skills e os agents do framework são os mesmos em todo projeto. O que muda é o que o passo 2 preenche e os agents dev do passo 3. Quando você reabre o Claude Code no workspace, ele carrega `.claude/skills/` e `.claude/agents/`, e `/demanda` passa a existir.
 
-Para ver o resultado de uma instalação, compare `framework/.claude/` com `demo/.claude/`. No demo, o `dev.md` virou `dev-node.md`, `dev-python.md` e `dev-go.md`, e os marcadores viraram Consultto, Ana, pnpm, uv etc.
+Para ver o resultado de uma instalação, compare `framework/.claude/` com `demo/.claude/`. No demo, o `dev.md` virou `allan-dev-node.md`, `sam-dev-python.md` e `greg-dev-go.md`, e os marcadores viraram Consultto, Ana, pnpm, uv etc.
 
 ## Qual assistente usar
 
@@ -83,7 +89,7 @@ Para ver o resultado de uma instalação, compare `framework/.claude/` com `demo
    /demanda criar o esqueleto do serviço api com health check
    ```
 
-Resultado: `code/<serviço>/` com `git init`, `doc/` com a estrutura de conhecimento e `.claude/` adaptado, com um agent `dev-<stack>` para cada stack.
+Resultado: `code/<serviço>/` com `git init`, `doc/` com a estrutura de conhecimento, `tools/` e `.claude/` adaptado, com um dev para cada stack.
 
 ## Cenário 2: projeto existente
 
@@ -149,27 +155,32 @@ Com um arquivo de valores (modelo em `setup/lib/valores-exemplo.md`), o script f
 ~/DevMove/devmove-flow/setup/lib/instalar.sh ~/Workspace/meu-saas --valores ~/Workspace/meu-saas/devmove-valores.md
 ```
 
-Saída extra: `preenchido <arquivo>`, `agent .claude/agents/dev-<stack>.md`, `hook .claude/settings.json` e, por último, `sobrou nada` (ou os marcadores que faltaram no arquivo de valores). Dá para rodar de novo depois de completar o arquivo; o que já foi copiado é mantido.
+Saída extra: `preenchido <arquivo>`, `agent .claude/agents/<apelido>-dev-<stack>.md`, `rule .claude/rules/code/servicos/<serviço>.md`, `hook .claude/settings.json` e, por último, `sobrou nada` (ou os marcadores que faltaram no arquivo de valores). Dá para rodar de novo depois de completar o arquivo; o que já foi copiado é mantido.
 
 ## Depois de instalado: o dia a dia
 
 | Você quer | Digite |
 |---|---|
-| começar uma demanda | `/demanda <relato em texto livre>` |
-| continuar uma demanda em outra sessão | `/retomar <pasta-do-dossiê>` |
+| começar uma feature, bug ou débito | `/demanda <relato em texto livre>` |
+| continuar uma demanda, ou priorizar um débito do backlog | `/retomar <pasta-do-dossiê>` |
+| testar uma entrega num ambiente | `/qa <entrega> [ambiente]` |
+| revisar o PR de um colega | `/revisar-pr <link>` |
+| subir ou consertar a infra local de um serviço | `/infra <serviço>` |
+| guardar material novo numa demanda ou na base | `/ingerir <caminho>` |
 | ver o estado geral | `/brief` |
 | registrar uma dúvida e a resposta | `/faq <pergunta>` |
 | documentar um processo do time | `/processo <narrativa>` |
 | gerar documento para alguém de fora | `/entregavel <módulo> para <audiência>` |
 
 O que esperar de uma demanda:
-1. O orquestrador decide o porte (P, M ou G) e pergunta se concorda.
+1. O orquestrador decide o tipo (feature, bug, débito) e o porte (P, M ou G) e pergunta se concorda.
 2. Cada etapa termina num gate: você aprova ou pede ajuste.
-3. Na execução, os devs trabalham um por serviço. O revisor de código manda corrigir o que ficou errado sem te perguntar.
-4. No fechamento, o conhecimento vai para `doc/` e uma linha entra em `.claude/retro.md`, com tempo, tokens e o ajuste proposto ao harness.
+3. Na execução, o orquestrador cria a branch, os devs trabalham um por serviço e a revisora de código manda corrigir o que ficou errado sem te perguntar. Depois do seu gate, o orquestrador commita.
+4. No fechamento, o que ficou fora de escopo vira débito ou bug no backlog (você decide), o conhecimento vai para `doc/` e uma linha entra em `.claude/retro.md`, com tempo, tokens e o ajuste proposto ao harness.
 
 Onde olhar:
-- estado de uma demanda: `doc/demandas/<dossiê>/CHANGELOG.md`;
+- estado de uma demanda: `doc/demandas/<tipo>/<dossiê>/CHANGELOG.md`;
+- backlog de débito e bug: `doc/demandas/debito-tecnico/INDEX.md` e `doc/demandas/bug/INDEX.md`;
 - consumo de cada agent: o Registro do mesmo arquivo;
 - tendência de custo: `.claude/retro.md`.
 

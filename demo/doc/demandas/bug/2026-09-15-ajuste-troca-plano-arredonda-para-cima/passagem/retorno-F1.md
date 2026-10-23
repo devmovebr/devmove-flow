@@ -1,0 +1,5 @@
+- Status: feito
+- Mudou: app/faturas/proporcional.py, tests/faturas/test_proporcional.py
+- Verificado: test_troca_dia_10 verde; pytest tests/faturas 41 passed; grep round( sem resultado no ajuste
+- Contratos alterados: nenhum
+- Fora de escopo encontrado: faturas já emitidas com 1 centavo a mais (3 em staging)

@@ -14,4 +14,5 @@ Sinais de que um princípio foi violado (pare e corrija na hora):
 - mesma peça revisada pela terceira vez;
 - agent lendo arquivo que o briefing não citou;
 - plano com DDL, código ou lista de arquivo por arquivo;
-- etapa rodada porque "está no fluxo", sem o porte pedir.
+- etapa rodada porque "está no fluxo", sem o porte pedir;
+- aceite verde por contorno, sem atender a intenção.

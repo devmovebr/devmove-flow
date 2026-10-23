@@ -1,4 +1,5 @@
 {
+  "model": "opus",
   "permissions": {
     "allow": [
       "Read",
@@ -13,16 +14,36 @@
       "Bash(find *)",
       "Bash(grep *)",
       "Bash(rg *)",
+      "Bash(jq *)",
+      "Bash(diff *)",
+      "Bash(mkdir -p *)",
       "Bash(git status*)",
       "Bash(git log*)",
       "Bash(git diff*)",
       "Bash(git show*)",
       "Bash(git branch*)",
-      "Bash(git ls-files*)"
+      "Bash(git ls-files*)",
+      "Bash(git grep*)",
+      "Bash(git fetch*)",
+      "Bash(git rev-parse*)",
+      "Bash(git worktree*)",
+      "Bash(git update-ref*)",
+      "Bash(git -C * status*)",
+      "Bash(git -C * log*)",
+      "Bash(git -C * diff*)",
+      "Bash(git -C * show*)",
+      "Bash(git -C * fetch*)",
+      "Bash(git rm *)",
+      "Bash(*/tools/*.sh*)",
+      "Bash(python3 */tools/consumo.py*)",
+      "Bash(bash */tools/*.sh*)",
+      "Bash(source */tools/*.sh*)"
     ],
     "deny": [
       "Bash(git push*)",
-      "Bash(git commit*)",
+      "Bash(git -C * push*)",
+      "Bash(git reset --hard*)",
+      "Bash(git rebase*)",
       "Bash(rm -rf *)"
     ]
   },
@@ -34,7 +55,7 @@
           {
             "type": "command",
             "timeout": 30,
-            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */code/web/*.ts|*/code/web/*.tsx|*/code/api/*.ts) svc=\"${f%%/src/*}\"; [ -x \"$svc/node_modules/.bin/eslint\" ] && \"$svc/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; */code/mensageria/*.go) gofmt -w \"$f\" >/dev/null 2>&1;; esac; exit 0"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */code/web/*.ts) svc=\"${f%%/src/*}\"; [ -x \"$svc/node_modules/.bin/eslint\" ] && \"$svc/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; */code/web/*.tsx) svc=\"${f%%/src/*}\"; [ -x \"$svc/node_modules/.bin/eslint\" ] && \"$svc/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; */code/api/*.ts) svc=\"${f%%/src/*}\"; [ -x \"$svc/node_modules/.bin/eslint\" ] && \"$svc/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; */code/mensageria/*.go) gofmt -w \"$f\" >/dev/null 2>&1;; esac; exit 0"
           }
         ]
       }

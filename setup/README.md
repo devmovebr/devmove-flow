@@ -9,7 +9,8 @@ Assistentes que aplicam o DevMove Flow adaptado a um projeto. Cada um é um rote
 | `atualizar.md` | workspace já no framework | detecta a versão, aplica só as Novidades que faltam, preserva o que a retro calibrou |
 | `comum.md` | todos | regras do assistente, instalação, verificação, entrega |
 | `lib/instalar.sh` | todos | copia `framework/` sem sobrescrever e marca versão e data; com `--valores`, também preenche tudo |
-| `lib/aplicar_valores.py` | todos | chamado pelo `instalar.sh --valores`: marcadores, um `dev-<stack>` por stack, hooks |
+| `lib/aplicar_valores.py` | todos | chamado pelo `instalar.sh --valores`: marcadores, um dev por stack com apelido, uma rule por serviço, hooks |
+| `lib/migrar_demandas.py` | atualizar | move dossiês para `doc/demandas/<tipo>/` e reescreve links (migração da 2.0.0) |
 | `lib/valores-exemplo.md` | todos | modelo do arquivo de valores que o assistente escreve |
 | `lib/marcadores.md` | todos | o que preencher em cada `{{...}}` |
 

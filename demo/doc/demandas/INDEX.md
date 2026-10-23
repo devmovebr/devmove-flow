@@ -1,11 +1,10 @@
 # Demandas: INDEX
 
-Uma pasta por demanda: `<AAAA-MM-DD>-<slug>/`. Estado de cada uma no `CHANGELOG.md` dela.
+Uma pasta por tipo, um dossiê por demanda: `<tipo>/<AAAA-MM-DD>-<slug>/`. Regras em `.claude/fluxo.md`.
 
-| Dossiê | Porte | Serviços | Estado | Depende de |
-|---|---|---|---|---|
-| [2026-08-04-lembrete-consulta-whatsapp](2026-08-04-lembrete-consulta-whatsapp/INDEX.md) | M | api, mensageria | fechada | nenhum |
-| [2026-08-19-renomear-medico-profissional](2026-08-19-renomear-medico-profissional/INDEX.md) | P | api | fechada | nenhum |
-| [2026-09-01-planos-assinatura](2026-09-01-planos-assinatura/INDEX.md) | G | api, cobranca, web | fechada | nenhum |
-| [2026-09-20-lista-de-espera](2026-09-20-lista-de-espera/INDEX.md) | G | api, mensageria, web | travada (fallback F2) | nenhum |
-| [2026-09-26-remarcacao-pelo-paciente](2026-09-26-remarcacao-pelo-paciente/INDEX.md) | M | api, mensageria, web | plano aprovado (validação 1.0.0; pela 1.1.0 seria G) | lista-de-espera |
+| Tipo | Carregue quando |
+|---|---|
+| [feature/](feature/INDEX.md) | funcionalidade nova, melhoria ou épico |
+| [bug/](bug/INDEX.md) | comportamento errado em algo que já existe |
+| [debito-tecnico/](debito-tecnico/INDEX.md) | refatoração, rename, limpeza, backlog técnico |
+| [qa/](qa/INDEX.md) | teste de entrega já integrada, com evidência e parecer |

@@ -1,0 +1,4 @@
+- Status: feito
+- Mudou: evidencias/staging.md, parecer-staging.md
+- Verificado: REPROVADO, 5 de 6; T3 ajuste 6667 contra 6666 esperado
+- Fora de escopo encontrado: nenhum

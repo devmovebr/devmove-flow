@@ -22,10 +22,13 @@ Workspace com duas pastas e o harness na raiz:
   CLAUDE.md          papel do orquestrador
   .claude/           fluxo.md, rules, agents, skills, retro.md
   code/<serviço>/    um repositório git por serviço
-  doc/               conhecimento (servicos, produtos) e dossiês de demanda
+  doc/               conhecimento (servicos, produtos, integracoes, arquitetura) e demandas por tipo
+  tools/             scripts que operam o código e o ambiente
 ```
 
-O usuário digita só `/demanda <relato>`. O orquestrador decide o porte e conduz as etapas, com um gate de aprovação no fim de cada uma:
+Demanda tem tipo, e cada tipo tem pasta em `doc/demandas/`: `feature` (inclui melhoria e épico), `bug`, `debito-tecnico` (nasce em backlog) e `qa` (teste de entrega integrada).
+
+O usuário digita só `/demanda <relato>`. O orquestrador decide tipo e porte e conduz as etapas, com um gate de aprovação no fim de cada uma:
 
 | Porte | Quando | Etapas |
 |---|---|---|
@@ -33,7 +36,9 @@ O usuário digita só `/demanda <relato>`. O orquestrador decide o porte e condu
 | M | regra clara, 1 ou 2 serviços | plano → executar → fechar |
 | G | regra ambígua, vários serviços, contrato novo | negocio → tecnico → plano → executar → fechar |
 
-Papéis: `consultor-code` (fatos do código), `arquiteto` (técnico, plano, testes), `revisor` (plano), `dev-<stack>` (implementa), `revisor-code` (árbitro do diff), `arquivista` (conhecimento e mapas).
+Papéis, com apelido no nome do agent: `caio-consultor-code` (fatos do código), `theo-arquiteto` (técnico, plano, testes), `vera-revisor` (plano), `<apelido>-dev-<stack>` (implementa), `rita-revisor-code` (árbitro do diff), `iris-arquivista` (conhecimento e mapas), `nina-qa` (teste em ambiente), `paul-revisor-pr` (PR de par), `igor-infra-local` (infra na máquina). Opus em quem julga e orquestra, Sonnet em quem implementa e lê.
+
+Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`.
 
 Mecanismos que seguram custo e prazo:
 - teto de linhas por documento;
@@ -41,7 +46,9 @@ Mecanismos que seguram custo e prazo:
 - agents vivos por papel;
 - orçamento de contexto com passagem de bastão;
 - mapas de código compartilhados;
-- CHANGELOG por demanda e retro por demanda.
+- CHANGELOG por demanda e retro por demanda;
+- retorno de agent gravado em disco;
+- ferramentas em `tools/` como único caminho até recurso sensível.
 
 Regras completas: `framework/.claude/fluxo.md`.
 
@@ -51,7 +58,7 @@ Regras completas: `framework/.claude/fluxo.md`.
 |---|---|
 | `framework/` | o harness genérico, com marcadores `{{...}}`. É o que os assistentes instalam |
 | `setup/` | assistentes de implantação e o script de instalação |
-| `demo/` | workspace fictício (Consultto, SaaS de agenda para clínicas) com o framework instalado e o histórico de 4 demandas |
+| `demo/` | workspace fictício (Consultto, SaaS de agenda para clínicas) com o framework instalado e o histórico de demandas de cada tipo |
 
 ## Implantar
 

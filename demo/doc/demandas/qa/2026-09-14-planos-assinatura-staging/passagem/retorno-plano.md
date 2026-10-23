@@ -1,0 +1,3 @@
+- Status: feito
+- Mudou: plano-teste.md (21 linhas)
+- Verificado: 6 cenários, URL base e token conferidos em doc/arquitetura

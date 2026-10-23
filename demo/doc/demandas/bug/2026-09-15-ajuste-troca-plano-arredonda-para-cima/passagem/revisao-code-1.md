@@ -1,0 +1,4 @@
+- Veredito: aprovado
+- Corrigir: nenhum
+- Contratos alterados: nenhum
+- Observações: teste cobre dia 10; dia 29 seria desejável

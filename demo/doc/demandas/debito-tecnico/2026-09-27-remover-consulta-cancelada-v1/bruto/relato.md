@@ -1,0 +1,1 @@
+Fora de escopo encontrado na validação de remarcacao-pelo-paciente (`validacao.md`), aprovado como débito no gate: a mensageria ainda aceita `consulta.cancelada` v1 e v2, e os mapas das demandas divergem sobre a versão vigente. Todo produtor publica v2 desde 2026-08-12. Remover o consumo de v1 e alinhar os mapas de serviço.

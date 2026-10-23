@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Copia framework/ para o workspace alvo sem sobrescrever arquivo existente.
 # Uso: setup/lib/instalar.sh <workspace-alvo> [--valores <arquivo.md>]
-# Com --valores, aplica os marcadores, gera os dev-<stack> e os hooks (ver aplicar_valores.py).
+# Preenche na cópia {{VERSAO}} e {{DATA}}.
+# Com --valores, aplica os marcadores, gera os devs, as rules por serviço e os hooks (ver aplicar_valores.py).
 # Saída: uma linha por arquivo, "copiado" ou "existe" (quem decide o merge é o assistente).
 set -euo pipefail
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -19,6 +20,7 @@ find . -type f ! -name ".DS_Store" | sort | while read -r f; do
   else
     mkdir -p "$(dirname "$destino")"
     LC_ALL=C sed -e "s/{{VERSAO}}/$versao/g" -e "s/{{DATA}}/$hoje/g" "$f" > "$destino"
+    [ -x "$f" ] && chmod +x "$destino"
     echo "copiado ${f#./}"
   fi
 done

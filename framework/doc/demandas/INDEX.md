@@ -1,6 +1,10 @@
 # Demandas: INDEX
 
-Uma pasta por demanda: `<AAAA-MM-DD>-<slug>/`. Estado de cada uma no `CHANGELOG.md` dela.
+Uma pasta por tipo, um dossiê por demanda: `<tipo>/<AAAA-MM-DD>-<slug>/`. Regras em `.claude/fluxo.md`.
 
-| Dossiê | Porte | Serviços | Estado | Depende de |
-|---|---|---|---|---|
+| Tipo | Carregue quando |
+|---|---|
+| [feature/](feature/INDEX.md) | funcionalidade nova, melhoria ou épico |
+| [bug/](bug/INDEX.md) | comportamento errado em algo que já existe |
+| [debito-tecnico/](debito-tecnico/INDEX.md) | refatoração, rename, limpeza, backlog técnico |
+| [qa/](qa/INDEX.md) | teste de entrega já integrada, com evidência e parecer |

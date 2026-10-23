@@ -12,7 +12,8 @@ Procure no topo de `.claude/fluxo.md`:
 |---|---|
 | `Versão do DevMove Flow: X.Y.Z` | X.Y.Z |
 | `Versão do harness: 4` (prompt portátil anterior ao framework) | 1.0.0 em conteúdo; só troque a marca |
-| `Versão do harness: 1` a `3`, ou nenhuma marca mas existe `.claude/fluxo.md`, `.claude/rules/principios.md` ou `CHANGELOG.md` em dossiês | anterior à 1.0.0 |
+| `Versão do harness: 5` (prompt portátil) | 1.1.0 em conteúdo, com regras locais da retro; confira item a item |
+| `Versão do harness: 1` a `3`, ou nenhuma marca mas existe `.claude/fluxo.md`, `.claude/rules/principios.md` ou `CHANGELOG.md` em dossiês | anterior à 1.0.0; harness que evoluiu em paralelo (nomes de agent diferentes) entra aqui |
 | nada disso | não usa o framework: pare e indique `projeto-existente.md` |
 
 Versão atual do framework: `<devmove-flow>/VERSION`. Igual à instalada: diga e pare.
@@ -37,6 +38,7 @@ Gate: tabela item · situação, e cada conflito com as duas versões lado a lad
 - Arquivo novo do framework que não existe no workspace: `setup/lib/instalar.sh` copia só os que faltam.
 - Preserve sempre: nomes de agents, skills e pastas; números calibrados (tetos, conversão de tokens, orçamentos); regras vindas da retro; conteúdo de `retro.md`, de todo `CHANGELOG.md` de demanda e de `doc/`.
 - Mudança de estrutura (versão major): siga a seção Migração da versão no CHANGELOG, uma etapa por gate.
+- Regra local que vale para qualquer projeto e o framework ainda não tem: liste na entrega como proposta para o framework.
 - Troque a marca para `Versão do DevMove Flow: <versão nova> (atualizado em <data>)`.
 
 ## Fase 4: verificação e entrega

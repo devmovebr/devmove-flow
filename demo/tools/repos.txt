@@ -1,0 +1,5 @@
+# Um repositório por linha: <pasta em code/> <url git>
+web git@github.com:consultto/web.git
+api git@github.com:consultto/api.git
+cobranca git@github.com:consultto/cobranca.git
+mensageria git@github.com:consultto/mensageria.git

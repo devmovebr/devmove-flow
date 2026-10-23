@@ -16,9 +16,10 @@ Gate: tabela repo · stack · comandos · documentação encontrada, e a propost
 ## Fase 2: organizar o workspace
 
 - Repositórios vão para `code/<serviço>/` (mover pasta, sem mexer no git de cada um).
-- `doc/` na raiz. Documentação solta que já existia (fora dos repos) vai para `doc/` na área certa ou para `doc/demandas/<data>-legado/bruto/`, sem reescrever.
+- `doc/` na raiz. Documentação solta que já existia (fora dos repos) vai para `doc/` na área certa (contrato de parceiro em `doc/integracoes/<parceiro>/referencia/`) ou para `doc/demandas/feature/<data>-legado/bruto/`, sem reescrever.
+- Scripts utilitários soltos vão para `tools/`.
 - Harness que já existe em algum repo ou subpasta (`.claude/`, `CLAUDE.md`): não apague. Liste para o merge da Fase 4.
-- `git init -b <branch principal>` na raiz se ainda não houver (antes, `git rev-parse --show-toplevel` para não aninhar em outro repo), com `code/*/` e `.env*` no `.gitignore`.
+- `git init -b <branch principal>` na raiz se ainda não houver (antes, `git rev-parse --show-toplevel` para não aninhar em outro repo), com o `.gitignore` do framework (`code/*/`, `.env*`, `tools/.local/`).
 
 Gate: árvore antes e depois. Só move depois do "aprovar".
 

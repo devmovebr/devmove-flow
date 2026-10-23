@@ -1,0 +1,2 @@
+# Um repositório por linha: <pasta em code/> <url git>
+{{REPOS}}

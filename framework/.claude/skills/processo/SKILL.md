@@ -9,5 +9,5 @@ disable-model-invocation: true
 2. Extraia: gatilho, pré-requisitos, passos ordenados, quem faz cada passo, artefatos, critério de pronto, onde costuma travar.
 3. O que ficou implícito (ordem, aprovação, o que trava): um lote de perguntas fechadas.
 4. Salve `doc/processos-internos/processo-<nome>.md`, frontmatter `tipo: processo`, `data`, `autor`, e atualize o `INDEX.md` da pasta.
-5. Regra que restringe implementação vira fato no domínio certo, pelo `arquivista`.
+5. Regra que restringe implementação vira fato no domínio certo, pela `iris-arquivista`.
 6. Gate: aprovar salva; ajuste reescreve o trecho apontado.

@@ -21,7 +21,7 @@ Rodada 2, a técnica:
 
 Rodada 3, só se sobrou lacuna que muda a instalação.
 
-Stack "ainda não sei": instale sem `dev-<stack>` e registre a pendência; o agent nasce quando a stack for decidida.
+Stack "ainda não sei": instale sem o dev da stack e registre a pendência; o agent nasce quando a stack for decidida.
 
 Gate: resumo de até 10 linhas com projeto, serviços, stacks e regras.
 
@@ -29,7 +29,7 @@ Gate: resumo de até 10 linhas com projeto, serviços, stacks e regras.
 
 - Antes de qualquer `git init`, confira `git rev-parse --show-toplevel`: se a pasta já está dentro de outro repositório, pergunte no gate com duas opções: "seguir com repositório aninhado" ou "não criar git na raiz do workspace".
 - Crie `code/` e, para cada serviço, `code/<serviço>/` com `git init -b <branch principal>` e um `README.md` de uma linha. Só crie código se o usuário pedir.
-- `git init -b <branch principal>` na raiz do workspace (que versiona `doc/` e `.claude/`), com `code/*/` e `.env*` no `.gitignore`.
+- `git init -b <branch principal>` na raiz do workspace (que versiona `doc/` e `.claude/`), com o `.gitignore` do framework (`code/*/`, `.env*`, `tools/.local/`).
 
 Gate: árvore do workspace.
 
