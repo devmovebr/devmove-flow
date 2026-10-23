@@ -11,4 +11,43 @@ Scripts que operam o código e o ambiente do workspace: clonar repositórios, su
 |---|---|---|
 | `clonar-repos.sh` | `tools/clonar-repos.sh`: clona ou atualiza os repositórios de `repos.txt` em `code/` | setup, pessoa |
 | `consumo.py` | `python3 tools/consumo.py <dossiê>`: soma tokens e chamadas do dossiê a partir dos transcripts do Claude Code e grava `<dossiê>/consumo.json` | `/fechar` |
+| `qa.sh` | `tools/qa.sh <validar\|run\|veredito\|rodadas> <dossiê> ...`: valida e executa o `plano-teste.md` de um dossiê de QA, grava a rodada em `.devmove/devmove.db` e regera `evidencias/<ambiente>.md`. Requer Node ≥ 22.13 | `nina-qa`, painel |
 | `atualizar_framework.py` | `python3 tools/atualizar_framework.py [--checar]`: atualiza o harness para a última tag do DevMove Flow com merge de 3 vias a partir de `devmove-valores.md` | `/demanda` |
+
+## Ambientes
+
+`tools/ambientes/<ambiente>.env` (no git) define `BASE` e o que não é segredo. `tools/.local/ambientes/<ambiente>.env` (fora do git) define segredos. `<NOME>_CMD=<comando>` roda o comando e usa a saída como `<NOME>`, ex.: `TOKEN_CMD=tools/token.sh staging`. Segredo nunca é gravado: no banco e na evidência aparece `{{NOME}}`.
+
+## Plano de teste
+
+Formato que `tools/qa.sh` lê no `plano-teste.md`:
+
+~~~md
+## Variáveis
+```env
+CLINICA=qa-planos
+```
+
+## Cenários
+
+### T1 Consultar plano atual
+Pré-condição: clínica qa-planos no Básico.
+```env
+CLINICA=qa-planos
+```
+```http
+GET {{BASE}}/v1/assinatura
+Authorization: Bearer {{TOKEN}}
+X-Clinica: {{CLINICA}}
+```
+Espera:
+- status 200
+- `$.plano` == "basico"
+- `$.itens[?(@.tipo=="ajuste_troca")].valor` == 6666
+- `$.codigo` ausente
+- texto livre vira asserção manual (PENDENTE até o veredito)
+~~~
+
+- Bloco `env` em `## Variáveis` vale para a suíte; dentro do cenário, só para ele.
+- Bloco `http`: `MÉTODO URL`, cabeçalhos, linha vazia, corpo.
+- Asserção: `status <n>`; `` `<jsonpath>` `` com `==`, `!=`, `>`, `>=`, `<`, `<=`, `contém` e valor JSON; `` `<jsonpath>` existe `` ou `ausente`.

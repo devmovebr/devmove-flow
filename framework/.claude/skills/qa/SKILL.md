@@ -20,7 +20,7 @@ Sem porte e sem `CHANGELOG.md`. O estado mora na linha do `doc/demandas/qa/INDEX
 ## Execução
 1. Ambiente (`.claude/fluxo.md`, Ambiente): ambiente remoto, confere credencial e rede pela ferramenta de `tools/`; falhou, pergunta fechada a {{RESPONSAVEL}}. Local: `/infra` para o serviço antes.
 2. `SendMessage` à `nina-qa` viva (ou spawn novo com a pasta) para a fase execução. Orçamento: 100 chamadas.
-3. Mostra em até 8 linhas: veredito, placar, defeitos, caminho do `parecer-<ambiente>.md`. Atualiza o status no índice.
+3. Mostra em até 8 linhas: veredito, placar, número da rodada, defeitos, caminho do `parecer-<ambiente>.md`. O histórico de rodadas e o reteste manual ficam no painel (`framework-ui/`). Atualiza o status no índice.
 4. Defeito de entrega própria: gate propondo um dossiê de `bug` por defeito, com `Origem` neste QA. Defeito de entrega de outra pessoa: fica no parecer para o autor.
 
 ## Regras

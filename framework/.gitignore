@@ -5,3 +5,4 @@ code/*/
 code/.revisao/
 tools/.local/*
 !tools/.local/.gitkeep
+.devmove/
