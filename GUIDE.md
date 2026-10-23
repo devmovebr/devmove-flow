@@ -152,6 +152,8 @@ Com um arquivo de valores (modelo em `setup/lib/valores-exemplo.md`), o script f
 ~/DevMove/devmove-flow/setup/lib/instalar.sh ~/Workspace/meu-saas --valores ~/Workspace/meu-saas/devmove-valores.md
 ```
 
+Por último, o script registra o workspace na DevMove Flow UI da máquina (`tools/devmove-ui.sh registrar`): procura `../devmove-flow-ui` e instala lá se não existir. UI em outra pasta: `--ui <pasta>`. Vários projetos na mesma VM usam a mesma UI.
+
 Saída extra: `preenchido <arquivo>`, `agent .claude/agents/<apelido>-dev-<stack>.md`, `rule .claude/rules/code/servicos/<serviço>.md`, `hook .claude/settings.json` e, por último, `sobrou nada` (ou os marcadores que faltaram no arquivo de valores). Dá para rodar de novo depois de completar o arquivo; o que já foi copiado é mantido.
 
 ## Depois de instalado: o dia a dia

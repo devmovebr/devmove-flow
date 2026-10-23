@@ -21,4 +21,6 @@ Terminada a migração, copie `framework/tools/atualizar_framework.py` para `too
 
 ## Fase 3: verificação e entrega
 
+Workspace sem `tools/.local/ui.txt`: rode `tools/devmove-ui.sh registrar`, com `--ui <pasta>` se a UI da máquina já está fora de `../devmove-flow-ui`.
+
 Verificação e entrega de `comum.md`. Commit `chore(harness): atualiza devmove flow para <versão>` só com pedido.

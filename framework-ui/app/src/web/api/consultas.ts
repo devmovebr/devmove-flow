@@ -4,6 +4,7 @@ import type {
   Demanda,
   EnvioResultado,
   Execucao,
+  Info,
   Matriz,
   Projeto,
   Requisicao,
@@ -22,6 +23,10 @@ export const chaves = {
   matriz: (p: string, d: string, amb: string) => ['matriz', p, d, amb] as const,
   historico: (p: string, d: string, c: string) => ['historico', p, d, c] as const,
   rodada: (p: string, id: number) => ['rodada', p, id] as const,
+}
+
+export function useInfo() {
+  return useQuery({ queryKey: ['info'], queryFn: () => api<Info>(rotasApi.info()), staleTime: Infinity })
 }
 
 export function useProjetos() {

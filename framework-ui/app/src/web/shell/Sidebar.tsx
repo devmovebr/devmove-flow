@@ -1,6 +1,6 @@
 import { ChevronsUpDown, FlaskConical, ScrollText } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
-import { useProjetos } from '../api/consultas'
+import { useInfo, useProjetos } from '../api/consultas'
 import { Avatar } from '../ui/Avatar'
 import { caminhos, useRota } from '../util/caminhos'
 
@@ -40,6 +40,8 @@ function SeletorProjeto() {
 
 export function Sidebar() {
   const { p } = useRota()
+  const { data: info } = useInfo()
+  const usuario = info?.usuario ?? ''
   return (
     <aside className="flex w-[216px] shrink-0 flex-col border-r border-borda bg-fundo">
       <div className="flex h-11 items-center gap-2 px-4">
@@ -72,10 +74,10 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto flex items-center gap-2.5 border-t border-borda px-4 py-3">
-        <Avatar nome="matheus" tamanho={28} />
+        <Avatar nome={usuario} tamanho={28} />
         <div className="leading-tight">
-          <div className="text-[12px] font-medium">Matheus</div>
-          <div className="text-[10px] text-texto-3">uso local</div>
+          <div className="text-[12px] font-medium capitalize">{usuario}</div>
+          <div className="text-[10px] text-texto-3">versão {info?.versao ?? '...'}</div>
         </div>
       </div>
     </aside>

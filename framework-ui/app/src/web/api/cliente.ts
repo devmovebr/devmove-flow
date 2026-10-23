@@ -29,6 +29,7 @@ export async function api<T>(caminho: string, init?: { method?: string; body?: u
 export const cod = encodeURIComponent
 
 export const rotasApi = {
+  info: () => '/info',
   projetos: () => '/projetos',
   ambientes: (p: string) => `/projetos/${cod(p)}/ambientes`,
   demandas: (p: string) => `/projetos/${cod(p)}/demandas`,

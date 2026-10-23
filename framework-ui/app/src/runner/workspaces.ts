@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import type { Demanda, Projeto } from '../shared/tipos.ts'
 import { repositorio } from './banco.ts'
 import { ErroRunner } from './erros.ts'
@@ -15,6 +15,17 @@ export function listarProjetos(raiz: string): Projeto[] {
     .filter((n) => !n.startsWith('.'))
     .map((nome) => ({ nome, caminho: join(raiz, nome) }))
     .filter((p) => statSync(p.caminho).isDirectory() && ehWorkspace(p.caminho))
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+}
+
+// Registro da UI instalada: um caminho absoluto de projeto por linha, # comenta.
+export function lerProjetosRegistrados(arquivo: string): Projeto[] {
+  if (!existsSync(arquivo)) return []
+  return readFileSync(arquivo, 'utf8')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#') && ehWorkspace(l))
+    .map((caminho) => ({ nome: basename(caminho), caminho }))
     .sort((a, b) => a.nome.localeCompare(b.nome))
 }
 

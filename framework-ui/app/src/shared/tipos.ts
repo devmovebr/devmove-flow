@@ -81,6 +81,8 @@ export type EstadoAtual = {
   execucoes: Execucao[]
 }
 
+export type Info = { usuario: string; versao: string }
+
 export type Projeto = { nome: string; caminho: string }
 
 export type Demanda = {

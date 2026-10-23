@@ -93,7 +93,7 @@ create table rodadas (
   dossie text not null,          -- 'qa/2026-09-14-planos-assinatura-staging'
   ambiente text not null,
   origem text not null,          -- 'agent' | 'manual'
-  autor text not null,           -- 'nina-qa' | 'matheus'
+  autor text not null,           -- 'nina-qa' | usuário da UI
   status text not null,          -- 'executando' | 'concluida' | 'interrompida'
   iniciada_em text not null,     -- ISO
   finalizada_em text
@@ -155,7 +155,7 @@ O curl usa variáveis de shell (`$BASE`, `$TOKEN`), nunca valor de segredo. `par
 | Comando | Faz |
 |---|---|
 | `qa.sh validar <dossiê>` | parseia o plano e lista erros por cenário. Sai 1 se houver erro |
-| `qa.sh run <dossiê> <amb> [T1,T3] [--autor nina-qa]` | cria rodada (origem `agent` se `--autor` não for `matheus`), executa em ordem, grava banco e evidência, imprime uma linha por cenário: `T3 FALHOU 200 0,09s $.itens[...].valor == 6666 (obtido 6667)` |
+| `qa.sh run <dossiê> <amb> [T1,T3] [--autor nina-qa]` | cria rodada com origem `agent`, executa em ordem, grava banco e evidência, imprime uma linha por cenário: `T3 FALHOU 200 0,09s $.itens[...].valor == 6666 (obtido 6667)` |
 | `qa.sh veredito <dossiê> <amb> <Tn> <VEREDITO> "<nota>"` | muda o veredito da última execução do cenário no ambiente e regrava a evidência |
 | `qa.sh rodadas <dossiê>` | lista rodadas com placar |
 
@@ -173,7 +173,7 @@ Prefixo `/api`. `:p` = nome do projeto. `:d` = `<tipo>/<slug>` codificado com `e
 | `GET /projetos/:p/demandas/:d` | `{demanda, suite: {titulo, mudanca, variaveis, cenarios: Cenario[]}, rodadas: Rodada[], estados: EstadoAtual[]}` (um estado por ambiente, mais recente primeiro) |
 | `GET /projetos/:p/demandas/:d/matriz?ambiente=` | `{rodadas: Rodada[], linhas: [{cenario, titulo, vereditos: {[rodadaId]: veredito}}]}` |
 | `GET /projetos/:p/demandas/:d/cenarios/:c/historico` | `Execucao[]` com `rodada` embutida, mais recente primeiro |
-| `POST /projetos/:p/demandas/:d/executar` `{ambiente, cenarios?}` | `{rodada_id}`. Origem `manual`, autor `matheus` |
+| `POST /projetos/:p/demandas/:d/executar` `{ambiente, cenarios?}` | `{rodada_id}`. Origem `manual`, autor `DEVMOVE_USUARIO` (usuário da máquina) |
 | `GET /projetos/:p/rodadas/:id` | `Rodada & {execucoes: Execucao[]}` |
 | `GET /projetos/:p/rodadas/:id/eventos` | SSE: `execucao` (Execucao), `fim` (Rodada) |
 | `POST /projetos/:p/rodadas/:id/parar` | `Rodada` com status `interrompida` |

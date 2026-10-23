@@ -4,6 +4,19 @@ Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
 
+## 2.4.0 (2026-10-23)
+
+Origem: o QA vivia em MD de curl e resposta, ruim como evidência para pessoas, sem histórico de rodadas e sem como retestar sem copiar para Postman ou Bruno.
+
+Novidades
+- [ ] `plano-teste.md` com formato fixo: cenário `### T<n>`, bloco `http`, bloco `env` e `Espera:` com asserções (`tools/README.md`, seção Plano de teste).
+- [ ] `tools/qa.sh` (`validar`, `run`, `veredito`, `rodadas`): executa o plano, grava cada rodada em `.devmove/devmove.db` (fora do git) e regera `evidencias/<ambiente>.md` com a última execução de cada cenário. Usa o Node da máquina (≥ 22.13) ou o container da UI.
+- [ ] `tools/ambientes/<ambiente>.env` (no git) e `tools/.local/ambientes/` (segredos); `<NOME>_CMD` roda um comando para obter o valor, como o token. Segredo nunca é gravado.
+- [ ] `nina-qa` escreve o plano no formato novo, valida com `qa.sh validar` e executa só pelo `qa.sh`; `/qa` mostra o número da rodada.
+- [ ] DevMove Flow UI (`framework-ui/`): painel de demandas, suítes, rodadas, comparação e reteste manual, publicado como `ghcr.io/devmovebr/devmove-flow-ui` a cada tag.
+- [ ] `tools/devmove-ui.sh` registra o workspace na UI da máquina (`../devmove-flow-ui` ou `--ui <pasta>`), e `setup/lib/instalar.sh` o chama no fim. O container sobe com o Docker.
+- [ ] `tools/atualizar_framework.py` baixa a imagem nova da UI em todo `/demanda` e avisa quando o workspace não está registrado.
+
 ## 2.3.0 (2026-10-23)
 
 Origem: a lista de termos proibidos do `/melhoria` depende do `devmove-valores.md` de cada cópia, que envelhecia depois da instalação.

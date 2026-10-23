@@ -16,7 +16,8 @@ no mesmo trecho vira conflito marcado no arquivo.
 Saída, primeira linha: "em dia X", "sem acesso ao framework", "nova X -> Y" (--checar),
 "major X -> Y" (migração assistida, nada aplicado) ou "atualizado X -> Y", seguida de uma
 linha por arquivo: novo, alterado, removido, conflito ou mantido. Por último, "aviso" quando
-devmove-valores.md não declara um serviço com rule ou um repositório de tools/repos.txt.
+devmove-valores.md não declara um serviço com rule ou um repositório de tools/repos.txt,
+e a linha da DevMove Flow UI ("UI em dia" ou "UI atualizada") quando o workspace está registrado nela.
 Código: 0 sem conflito, 1 com conflito, 2 bloqueado.
 """
 import io, os, re, shutil, subprocess, sys, tarfile, tempfile, datetime
@@ -57,6 +58,17 @@ def avisos_valores():
     return ["aviso devmove-valores.md desatualizado, sem: " + ", ".join(falta)] if falta else []
 
 
+def atualizar_ui():
+    """Baixa a imagem nova da DevMove Flow UI quando este workspace está registrado nela."""
+    script = os.path.join(ws, "tools", "devmove-ui.sh")
+    if checar or not os.path.isfile(script):
+        return []
+    if not os.path.isfile(os.path.join(ws, "tools", ".local", "ui.txt")):
+        return ["aviso UI não registrada: rode tools/devmove-ui.sh registrar [--ui <pasta>]"]
+    r = run("bash", script, "atualizar", text=True)
+    return [(r.stdout or r.stderr).strip() or "UI sem resposta"]
+
+
 fluxo = os.path.join(ws, ".claude", "fluxo.md")
 m = MARCA.search(open(fluxo, encoding="utf-8").read())
 if not m:
@@ -83,7 +95,7 @@ valores = os.path.join(ws, "devmove-valores.md")
 if not os.path.isfile(valores):
     sair("sem devmove-valores.md na raiz do workspace", 2)
 if num(nova) <= num(instalada):
-    sair("\n".join(["em dia " + instalada] + avisos_valores()), 0)
+    sair("\n".join(["em dia " + instalada] + avisos_valores() + atualizar_ui()), 0)
 if checar:
     sair("nova %s -> %s" % (instalada, nova), 0)
 if num(nova)[0] > num(instalada)[0]:
@@ -176,5 +188,5 @@ s = open(fluxo, encoding="utf-8").read()
 open(fluxo, "w", encoding="utf-8").write(MARCA.sub("Versão do DevMove Flow: %s (atualizado em %s)." % (nova, hoje), s, count=1))
 shutil.rmtree(tmp, ignore_errors=True)
 print("atualizado %s -> %s" % (instalada, nova))
-print("\n".join(linhas + avisos_valores()))
+print("\n".join(linhas + avisos_valores() + atualizar_ui()))
 sys.exit(1 if conflitos else 0)

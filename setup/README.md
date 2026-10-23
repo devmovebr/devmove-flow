@@ -8,7 +8,7 @@ Assistentes que aplicam o DevMove Flow adaptado a um projeto. Cada um é um rote
 | `projeto-existente.md` | repos já clonados | inventário, organiza em `code/` e `doc/`, entende cada serviço, instala e adapta com merge do harness antigo |
 | `atualizar.md` | major ou workspace sem atualização automática | conduz a Migração da major e liga o `tools/atualizar_framework.py` |
 | `comum.md` | todos | regras do assistente, instalação, verificação, entrega |
-| `lib/instalar.sh` | todos | copia `framework/` sem sobrescrever e marca versão e data; com `--valores`, também preenche tudo |
+| `lib/instalar.sh` | todos | copia `framework/` sem sobrescrever e marca versão e data; com `--valores`, também preenche tudo; registra o workspace na UI (`--ui <pasta>` para outra pasta) |
 | `lib/aplicar_valores.py` | todos | chamado pelo `instalar.sh --valores`: marcadores, um dev por stack com apelido, uma rule por serviço, hooks |
 | `lib/valores-exemplo.md` | todos | modelo do arquivo de valores que o assistente escreve |
 | `lib/marcadores.md` | todos | o que preencher em cada `{{...}}` |

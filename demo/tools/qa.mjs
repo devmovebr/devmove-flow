@@ -2781,7 +2781,7 @@ function parsearHttp(raw) {
 
 // src/runner/workspaces.ts
 import { existsSync as existsSync2, readFileSync as readFileSync2, readdirSync as readdirSync2, statSync } from "node:fs";
-import { dirname, join as join3, resolve } from "node:path";
+import { basename, dirname, join as join3, resolve } from "node:path";
 
 // src/runner/erros.ts
 var ErroRunner = class extends Error {
@@ -3039,7 +3039,7 @@ function iniciarRodada(o) {
   const rodadaId = repo.criarRodada({
     dossie: o.dossie,
     ambiente: o.ambiente,
-    origem: o.origem ?? (o.autor === "matheus" ? "manual" : "agent"),
+    origem: o.origem ?? "agent",
     autor: o.autor,
     iniciada_em: (/* @__PURE__ */ new Date()).toISOString()
   });

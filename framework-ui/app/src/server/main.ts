@@ -3,11 +3,11 @@ import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyError } from 'fastify'
-import type { Execucao, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
+import type { Execucao, Info, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
 import { repositorio, semMd } from '../runner/banco.ts'
 import { ErroRunner, envioAvulso, iniciarRodada, mudarVeredito } from '../runner/executor.ts'
 import { listarAmbientes } from '../runner/variaveis.ts'
-import { demanda, lerSuite, listarDemandas, listarProjetos } from '../runner/workspaces.ts'
+import { demanda, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos } from '../runner/workspaces.ts'
 
 function raizApp(): string {
   let dir = import.meta.dirname
@@ -18,13 +18,18 @@ function raizApp(): string {
 const APP = raizApp()
 const PORTA = Number(process.env.PORT ?? 4800)
 const WORKSPACES = resolve(process.env.DEVMOVE_WORKSPACES ?? join(APP, '..', '..'))
+const REGISTRO = process.env.DEVMOVE_PROJETOS
+const USUARIO = process.env.DEVMOVE_USUARIO || process.env.USER || 'pessoa'
+const VERSAO = process.env.DEVMOVE_VERSAO ?? 'dev'
 const WEB = join(APP, 'dist', 'web')
+
+const projetos = () => (REGISTRO ? lerProjetosRegistrados(REGISTRO) : listarProjetos(WORKSPACES))
 
 type Ativa = { emissor: EventEmitter; ctrl: AbortController }
 const ativas = new Map<string, Ativa>()
 
 function projeto(p: string): string {
-  const achado = listarProjetos(WORKSPACES).find((x) => x.nome === p)
+  const achado = projetos().find((x) => x.nome === p)
   if (!achado) throw new ErroRunner(`projeto não encontrado: ${p}`, 404)
   return achado.caminho
 }
@@ -59,7 +64,9 @@ app.setErrorHandler((err: FastifyError | ErroRunner, _req, reply) => {
   reply.status(status).send({ erro: err.message })
 })
 
-app.get('/api/projetos', async () => listarProjetos(WORKSPACES))
+app.get('/api/info', async (): Promise<Info> => ({ usuario: USUARIO, versao: VERSAO }))
+
+app.get('/api/projetos', async () => projetos())
 
 app.get<{ Params: { p: string } }>('/api/projetos/:p/ambientes', async (req) => listarAmbientes(projeto(req.params.p)))
 
@@ -126,7 +133,7 @@ app.post<{ Params: { p: string; d: string }; Body: { ambiente?: string; cenarios
       dossie,
       ambiente,
       cenarios,
-      autor: 'matheus',
+      autor: USUARIO,
       origem: 'manual',
       sinal: ctrl.signal,
       aoExecutar: (e) => emissor.emit('execucao', e),
@@ -242,4 +249,4 @@ app.setNotFoundHandler((req, reply) => {
 })
 
 await app.listen({ port: PORTA, host: process.env.HOST ?? '0.0.0.0' })
-console.log(`DevMove Painel em http://localhost:${PORTA} · workspaces em ${WORKSPACES}`)
+console.log(`DevMove Painel em http://localhost:${PORTA} · projetos de ${REGISTRO ?? WORKSPACES}`)

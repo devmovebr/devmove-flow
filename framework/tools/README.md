@@ -11,7 +11,8 @@ Scripts que operam o código e o ambiente do workspace: clonar repositórios, su
 |---|---|---|
 | `clonar-repos.sh` | `tools/clonar-repos.sh`: clona ou atualiza os repositórios de `repos.txt` em `code/` | setup, pessoa |
 | `consumo.py` | `python3 tools/consumo.py <dossiê>`: soma tokens e chamadas do dossiê a partir dos transcripts do Claude Code e grava `<dossiê>/consumo.json` | `/fechar` |
-| `qa.sh` | `tools/qa.sh <validar\|run\|veredito\|rodadas> <dossiê> ...`: valida e executa o `plano-teste.md` de um dossiê de QA, grava a rodada em `.devmove/devmove.db` e regera `evidencias/<ambiente>.md`. Requer Node ≥ 22.13 | `nina-qa`, painel |
+| `qa.sh` | `tools/qa.sh <validar\|run\|veredito\|rodadas> <dossiê> ...`: valida e executa o `plano-teste.md` de um dossiê de QA, grava a rodada em `.devmove/devmove.db` e regera `evidencias/<ambiente>.md`. Usa o Node da máquina (≥ 22.13) ou o container da UI | `nina-qa`, painel |
+| `devmove-ui.sh` | `tools/devmove-ui.sh <registrar\|remover\|atualizar\|status> [--ui <pasta>]`: registra este workspace na DevMove Flow UI da máquina (padrão `../devmove-flow-ui`, instalada se não existir), baixa a imagem nova e mostra a URL | `instalar.sh`, `atualizar_framework.py`, pessoa |
 | `atualizar_framework.py` | `python3 tools/atualizar_framework.py [--checar]`: atualiza o harness para a última tag do DevMove Flow com merge de 3 vias a partir de `devmove-valores.md` | `/demanda` |
 
 ## Ambientes

@@ -75,7 +75,7 @@ export function iniciarRodada(o: OpcoesRodada): { rodada_id: number; fim: Promis
   const rodadaId = repo.criarRodada({
     dossie: o.dossie,
     ambiente: o.ambiente,
-    origem: o.origem ?? (o.autor === 'matheus' ? 'manual' : 'agent'),
+    origem: o.origem ?? 'agent',
     autor: o.autor,
     iniciada_em: new Date().toISOString(),
   })

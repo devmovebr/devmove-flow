@@ -18,7 +18,7 @@ Os três assistentes (`novo-projeto`, `projeto-existente`, `atualizar`) seguem e
 O Claude Code trata `.claude/` como pasta sensível e pede aprovação para cada edição lá dentro. Por isso o assistente não edita `.claude/` à mão: ele escreve um arquivo de valores e o script aplica tudo.
 
 1. Escreva `devmove-valores.md` na raiz do workspace, no formato de `<devmove-flow>/setup/lib/valores-exemplo.md`, com tudo o que foi levantado: cada marcador de `marcadores.md`, uma seção `## STACK <id>` por stack (com `apelido`), uma `## SERVICO <nome>` por serviço (pasta, stack, dev, comandos próprios, subir local, armadilhas), `## REPOS`, `## MEM0` e as linhas de `## HOOK` (só para formatador que já existe no repo). O arquivo fica no workspace como registro da instalação.
-2. Rode `<devmove-flow>/setup/lib/instalar.sh <workspace> --valores <workspace>/devmove-valores.md`. Ele copia o framework sem sobrescrever (inclusive `tools/` e `.gitignore`), preenche os marcadores, gera os `<apelido>-dev-<stack>.md` e as rules `rules/code/servicos/<serviço>.md`, remove os modelos e cria o hook. A última linha diz o que sobrou (`sobrou nada` é o esperado).
+2. Rode `<devmove-flow>/setup/lib/instalar.sh <workspace> --valores <workspace>/devmove-valores.md`. Ele copia o framework sem sobrescrever (inclusive `tools/` e `.gitignore`), preenche os marcadores, gera os `<apelido>-dev-<stack>.md` e as rules `rules/code/servicos/<serviço>.md`, remove os modelos e cria o hook. A penúltima linha diz o que sobrou (`sobrou nada` é o esperado). A última registra o workspace na DevMove Flow UI: em `../devmove-flow-ui`, instalada se não existir, ou na pasta de `--ui <pasta>` quando o usuário já tem a UI em outro lugar. `aviso UI não registrada` (sem Docker ou sem login no `ghcr.io`) não bloqueia: vira pendência da entrega com o comando `tools/devmove-ui.sh registrar`.
 3. Sobrou marcador: complete o `devmove-valores.md` e rode de novo (arquivos já copiados são mantidos; o preenchimento vale para eles também).
 4. Guarde a lista de `existe` da saída: são os arquivos que pedem merge manual (passo 6).
 5. Formatador que ainda não existe (projeto novo): sem hook agora; a entrega lista "hook de lint" como pendência e a demanda de esqueleto inclui o hook no aceite.
@@ -41,4 +41,4 @@ Resumo de até 10 linhas: saída resumida do `instalar.sh` (copiados, existe, `s
 
 ## Entrega (até 20 linhas)
 
-Cenário · versão instalada · serviços e stacks · agents criados · arquivos com merge · decisões tomadas sem perguntar · pendências para o usuário · "reinicie a sessão e use `/demanda <relato>`".
+Cenário · versão instalada · URL da UI (`tools/devmove-ui.sh status`) · serviços e stacks · agents criados · arquivos com merge · decisões tomadas sem perguntar · pendências para o usuário · "reinicie a sessão e use `/demanda <relato>`".
