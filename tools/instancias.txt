@@ -1,0 +1,5 @@
+# Cópias do framework lidas pelo /melhoria. Uma linha por cópia:
+# <nome> <url git> <branch> <último commit lido>
+# O último commit é gravado pelo coletar_melhorias.py --marcar ao fim de cada /melhoria.
+mag https://github.com/devmovebr/mag-harness.git main 5c33f18
+unicred https://github.com/devmovebr/unicred-harness.git main 67c2c72

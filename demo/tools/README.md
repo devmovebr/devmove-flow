@@ -13,3 +13,4 @@ Scripts que operam o código e o ambiente do workspace: clonar repositórios, su
 | `db-local.sh` | `up`, `seed`, `reset`, `sql <arquivo>` no Postgres local descartável | dev, `igor-infra-local`, orquestrador antes do spawn |
 | `token.sh` | `token.sh <local\|staging>`: token com cache, para curl de QA | `nina-qa`, dev |
 | `consumo.py` | `python3 tools/consumo.py <dossiê>`: soma tokens e chamadas do dossiê a partir dos transcripts do Claude Code e grava `<dossiê>/consumo.json` | `/fechar` |
+| `atualizar_framework.py` | `python3 tools/atualizar_framework.py [--checar]`: atualiza o harness para a última tag do DevMove Flow com merge de 3 vias a partir de `devmove-valores.md` | `/demanda` |

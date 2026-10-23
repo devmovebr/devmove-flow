@@ -1,50 +1,24 @@
 # Assistente: atualizar o harness
 
-Uso: abra o Claude Code na raiz de um workspace que já usa o framework e peça "Siga `<devmove-flow>/setup/atualizar.md`".
+Versão minor e patch chegam sozinhas: o `/demanda` de cada workspace roda `tools/atualizar_framework.py`, que faz merge de 3 vias entre a versão instalada, a última tag e o workspace (`.claude/fluxo.md`, seção Versão do harness). Este assistente cobre o que o script não faz: versão major e workspace que ainda não tem o script.
 
-Leia antes `<devmove-flow>/setup/comum.md`.
+Uso: abra o Claude Code na raiz do workspace e peça "Siga `<devmove-flow>/setup/atualizar.md`". Leia antes `<devmove-flow>/setup/comum.md`.
 
-## Fase 1: qual versão está instalada
+## Fase 1: situação
 
-Procure no topo de `.claude/fluxo.md`:
-
-| Encontrado | Versão instalada |
+| Encontrado | Caminho |
 |---|---|
-| `Versão do DevMove Flow: X.Y.Z` | X.Y.Z |
-| `Versão do harness: 4` (prompt portátil anterior ao framework) | 1.0.0 em conteúdo; só troque a marca |
-| `Versão do harness: 5` (prompt portátil) | 1.1.0 em conteúdo, com regras locais da retro; confira item a item |
-| `Versão do harness: 1` a `3`, ou nenhuma marca mas existe `.claude/fluxo.md`, `.claude/rules/principios.md` ou `CHANGELOG.md` em dossiês | anterior à 1.0.0; harness que evoluiu em paralelo (nomes de agent diferentes) entra aqui |
-| nada disso | não usa o framework: pare e indique `projeto-existente.md` |
+| marca `Versão do DevMove Flow: X.Y.Z` com X igual à major atual, `tools/atualizar_framework.py` e `devmove-valores.md` | rode o script; este assistente não é preciso |
+| marca de major anterior | Fase 2 |
+| sem `devmove-valores.md` ou sem o script | escreva o `devmove-valores.md` a partir do workspace (modelo em `setup/lib/valores-exemplo.md`), gate, e Fase 2 |
+| sem marca do DevMove Flow | não usa o framework: siga `projeto-existente.md` |
 
-Versão atual do framework: `<devmove-flow>/VERSION`. Igual à instalada: diga e pare.
+## Fase 2: migração
 
-## Fase 2: o que falta
+Para cada major acima da instalada, em ordem, siga a seção Migração da versão no `CHANGELOG.md`, uma etapa por gate. Preserve nomes de agents, números calibrados pela retro, regras locais, `retro.md`, todo `CHANGELOG.md` de demanda e `doc/`.
 
-Leia `<devmove-flow>/CHANGELOG.md` e junte os itens de Novidades de toda versão acima da instalada (anterior à 1.0.0: o checklist completo da 1.0.0).
+Terminada a migração, copie `framework/tools/atualizar_framework.py` para `tools/`, troque a marca para a última versão da major nova e rode o script uma vez com `--checar`.
 
-Para cada item, confira no workspace se já existe, mesmo com outro texto. Classifique:
-- **presente**: nada a fazer;
-- **falta**: aplicar;
-- **conflito**: o workspace tem regra local diferente vinda da retro (`.claude/retro.md` ou registro de ajuste aprovado). Não aplique.
+## Fase 3: verificação e entrega
 
-Para comparar texto de arquivo, use o arquivo correspondente em `<devmove-flow>/framework/`.
-
-Gate: tabela item · situação, e cada conflito com as duas versões lado a lado. O usuário decide cada conflito.
-
-## Fase 3: aplicar
-
-- O Claude Code pede aprovação para editar `.claude/`: avise o usuário no gate da Fase 2 que cada edição aprovada vai pedir confirmação.
-- Edição pontual. Nunca reescreva arquivo inteiro que tem customização local.
-- Arquivo novo do framework que não existe no workspace: `setup/lib/instalar.sh` copia só os que faltam.
-- Preserve sempre: nomes de agents, skills e pastas; números calibrados (tetos, conversão de tokens, orçamentos); regras vindas da retro; conteúdo de `retro.md`, de todo `CHANGELOG.md` de demanda e de `doc/`.
-- Mudança de estrutura (versão major): siga a seção Migração da versão no CHANGELOG, uma etapa por gate.
-- Regra local que vale para qualquer projeto e o framework ainda não tem: liste na entrega como proposta para o framework.
-- Troque a marca para `Versão do DevMove Flow: <versão nova> (atualizado em <data>)`.
-
-## Fase 4: verificação e entrega
-
-Verificação de `comum.md`, mais: nenhum item marcado "falta" ficou sem aplicar. Entrega de `comum.md`, com a lista de itens aplicados, já presentes e conflitos decididos.
-
-## Retroalimentação
-
-Ajuste que a retro de um projeto aprovar e que sirva para qualquer projeto não fica só nele: registre como proposta para o framework (seção "Evoluir o framework" do `README.md` do devmove-flow).
+Verificação e entrega de `comum.md`. Commit `chore(harness): atualiza devmove flow para <versão>` só com pedido.

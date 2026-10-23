@@ -34,6 +34,6 @@ Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`. Apoio: `/brief`, `/faq
 - Node: pnpm. Python: uv. Go: módulos padrão. Nunca misturar gerenciador.
 - Nunca rodar migration contra staging ou produção; só `tools/db-local.sh`.
 - Dado de paciente nunca vai para log (LGPD).
-- Commit só depois do gate de Ana, feito pelo orquestrador, no repo do serviço. Push e PR só com pedido.
+- Commit só depois do gate de Ana, feito pelo orquestrador: código no repo do serviço, demanda e harness em commits separados no repo do workspace. Push e PR só com pedido.
 - Arquivo temporário só dentro da pasta da demanda.
 - Credencial nunca vai para dossiê, CHANGELOG, evidência ou commit.

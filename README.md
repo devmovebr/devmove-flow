@@ -58,6 +58,8 @@ Regras completas: `framework/.claude/fluxo.md`.
 |---|---|
 | `framework/` | o harness genérico, com marcadores `{{...}}`. É o que os assistentes instalam |
 | `setup/` | assistentes de implantação e o script de instalação |
+| `tools/` | o que mantém o framework: `instancias.txt`, coleta das cópias, checagem de vazamento, registro das melhorias |
+| `.claude/skills/melhoria/` | o `/melhoria` |
 | `demo/` | workspace fictício (Consultto, SaaS de agenda para clínicas) com o framework instalado e o histórico de demandas de cada tipo |
 
 ## Implantar
@@ -68,14 +70,20 @@ Abra o Claude Code na pasta do workspace alvo e peça para seguir um assistente:
 |---|---|
 | projeto do zero | `setup/novo-projeto.md` |
 | projeto existente (repos já clonados) | `setup/projeto-existente.md` |
-| atualizar um workspace que já usa o framework | `setup/atualizar.md` |
+| migrar de major ou ligar a atualização automática num workspace antigo | `setup/atualizar.md` |
+
+Versão minor e patch chegam sozinhas: o `/demanda` de cada workspace puxa a última tag e faz merge de 3 vias com o que é local.
 
 Os três terminam com o harness adaptado ao projeto: nomes, stacks, comandos e regras fixas. Detalhes em `setup/README.md`.
 
 ## Evoluir o framework
 
-1. Mude os arquivos em `framework/`. Ajuste que nasceu da retro de um projeto entra aqui quando vale para qualquer projeto.
-2. Suba `VERSION`: major muda estrutura, minor acrescenta regra compatível, patch corrige texto.
-3. Registre no `CHANGELOG.md` as Novidades da versão como itens verificáveis. Em versão major, inclua também a Migração. É dessa lista que o `setup/atualizar.md` sai.
-4. Rode `setup/atualizar.md` no `demo/` para ele refletir a versão nova.
-5. Commit e tag `v<versão>`.
+O framework evolui pelas retros das cópias.
+
+1. Na cópia, todo ajuste de harness aprovado no `/fechar` vira um commit próprio, separado do commit da demanda: `chore(harness): [framework] <assunto>` quando vale para qualquer projeto, `[local]` quando não.
+2. Aqui, `/melhoria` (rotina semanal) lê as cópias de `tools/instancias.txt` desde a última leitura, absorve em `framework/` os commits `[framework]` na forma genérica, sobe a versão, atualiza o `demo/`, passa o `tools/vazamento.py` e publica commit e tag `v<versão>`. O registro de cada commit lido fica em `tools/melhorias.md`.
+3. Cada cópia recebe a versão no próximo `/demanda`.
+
+Versão: major muda estrutura e pede Migração no `CHANGELOG.md` (assistida, `setup/atualizar.md`); minor acrescenta regra, skill, agent ou tool; patch corrige texto.
+
+Mudança feita direto aqui segue os mesmos passos à mão: `framework/`, `VERSION`, `CHANGELOG.md`, `python3 framework/tools/atualizar_framework.py --fonte . --workspace demo`, `tools/vazamento.py`, commit e tag.

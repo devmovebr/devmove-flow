@@ -65,7 +65,7 @@ Para ver o resultado de uma instalação, compare `framework/.claude/` com `demo
 |---|---|
 | Projeto novo, ainda sem código | `setup/novo-projeto.md` |
 | Já tenho repositórios (cliente novo, projeto antigo) | `setup/projeto-existente.md` |
-| O projeto já usa o DevMove Flow e saiu versão nova | `setup/atualizar.md` |
+| O projeto já usa o DevMove Flow e saiu versão major, ou ainda não atualiza sozinho | `setup/atualizar.md` |
 
 ## Cenário 1: projeto do zero
 
@@ -118,16 +118,13 @@ Harness antigo (`.claude/`, `CLAUDE.md` ou `AGENTS.md` em algum repo) não é ap
 
 ## Cenário 3: atualizar
 
-1. Abra o Claude Code na raiz do workspace que já usa o framework.
-2. Peça:
-   ```
-   Siga ~/DevMove/devmove-flow/setup/atualizar.md
-   ```
-3. Ele lê a versão instalada (primeira linha do `.claude/fluxo.md`), compara com `VERSION` e lista o que falta, a partir do `CHANGELOG.md`. Cada item aparece como `presente`, `falta` ou `conflito`.
-4. Aprove a lista. Em cada conflito, escolha entre a regra do projeto e a do framework.
-5. Ele aplica só o que falta, com edição pontual. Nomes, números calibrados pela retro e regras locais são preservados.
+Versão minor e patch: nada a fazer. No início de cada `/demanda`, o harness roda `tools/atualizar_framework.py`:
+1. compara a marca do `.claude/fluxo.md` com a última tag do framework;
+2. renderiza as duas versões com o `devmove-valores.md` do workspace;
+3. faz merge de 3 vias em cada arquivo: o que só o projeto mudou fica, o que só o framework mudou entra;
+4. sem conflito, commita `chore(harness): atualiza devmove flow para <versão>` e segue a demanda; com conflito, mostra os trechos lado a lado num gate.
 
-Instalação antiga, feita com o prompt de refatoração que existia antes do framework (marca `Versão do harness: N`), também é reconhecida.
+Versão major, ou workspace sem o script: abra o Claude Code na raiz do workspace e peça `Siga ~/DevMove/devmove-flow/setup/atualizar.md`. Ele conduz a Migração do `CHANGELOG.md` uma etapa por gate.
 
 ## O script instalar.sh
 
@@ -198,11 +195,8 @@ Quando a sessão chega a 45% do contexto, o orquestrador pede `/clear` e `/retom
 
 ## Evoluir o framework
 
-Resumo, com o detalhe no `README.md`:
-1. Mude `framework/`.
-2. Suba o `VERSION`.
-3. Registre as novidades no `CHANGELOG.md`.
-4. Rode `setup/atualizar.md` no `demo/`.
-5. Faça commit com a tag.
+1. Nas cópias, ajuste de harness aprovado no `/fechar` sai em commit próprio, marcado `[framework]` ou `[local]`.
+2. Aqui, o `/melhoria` lê os commits `[framework]` das cópias de `tools/instancias.txt`, absorve na forma genérica, atualiza o `demo/`, confere vazamento e publica a tag. Roda como rotina semanal; pode rodar à mão.
+3. As cópias recebem a versão no próximo `/demanda` (cenário 3).
 
-Os projetos se atualizam com o cenário 3.
+Detalhe no `README.md`.

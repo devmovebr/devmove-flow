@@ -36,6 +36,7 @@
       "Bash(git rm *)",
       "Bash(*/tools/*.sh*)",
       "Bash(python3 */tools/consumo.py*)",
+      "Bash(python3 */tools/atualizar_framework.py*)",
       "Bash(bash */tools/*.sh*)",
       "Bash(source */tools/*.sh*)"
     ],

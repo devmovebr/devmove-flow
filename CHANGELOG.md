@@ -1,8 +1,25 @@
 # CHANGELOG do DevMove Flow
 
-Cada versão lista as **Novidades** em itens verificáveis. O assistente `setup/atualizar.md` percorre as versões acima da instalada e aplica só o que falta.
+Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam às cópias pelo `tools/atualizar_framework.py`; major traz a Migração, conduzida pelo `setup/atualizar.md`.
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
+
+## 2.2.0 (2026-10-23)
+
+Origem: cópias evoluindo pela retro sem caminho de volta para o framework, e framework sem caminho até as cópias.
+
+Novidades
+- [ ] `tools/atualizar_framework.py`: lê a marca do `.claude/fluxo.md`, busca a última tag do framework (clone em `tools/.local/devmove-flow`), renderiza as duas versões com `devmove-valores.md` e faz merge de 3 vias por arquivo. Major, harness sujo ou sem `devmove-valores.md`: bloqueia sem aplicar.
+- [ ] `/demanda` roda o script antes de ler o `fluxo.md`; `fluxo.md` ganha a seção Versão do harness com o tratamento de cada saída.
+- [ ] `fluxo.md`, Git: commit da demanda separado do commit de harness no repo do workspace; harness em `chore(harness): [framework] <assunto>` ou `[local]`, um commit por classe, `[framework]` sem contexto do projeto.
+- [ ] `/fechar`: cada ajuste de harness do gate da retro ganha a classe; passo 8 faz os commits (`docs(demandas): <slug>` e um por classe).
+- [ ] `CLAUDE.md`, Regras fixas: commit do orquestrador também no repo do workspace.
+- [ ] `settings.json`: `Bash(python3 */tools/atualizar_framework.py*)`.
+- [ ] `devmove-valores.md` na raiz do workspace passa a ser obrigatório: é dele que o script renderiza cada versão.
+
+No repositório do framework
+- `/melhoria` (`.claude/skills/melhoria/`), `tools/instancias.txt`, `tools/coletar_melhorias.py`, `tools/vazamento.py`, `tools/melhorias.md`.
+- `setup/atualizar.md` reduzido a major e a workspace sem o script. `setup/lib/migrar_demandas.py` removido.
 
 ## 2.1.0 (2026-10-23)
 
@@ -58,7 +75,7 @@ Skills
 
 Migração (de 1.x, uma etapa por gate)
 1. Agents: renomeie os arquivos e todas as referências em `CLAUDE.md`, `.claude/` e `doc/INDEX.md` para os nomes com apelido. `dev-<stack>` vira `<apelido>-dev-<stack>`. CHANGELOGs e retro antigos ficam como estão.
-2. Demandas: escreva o mapa dossiê → tipo (`setup/lib/migrar_demandas.py <ws> <mapa>` mostra o plano; `--aplicar` move com `git mv`, reescreve links e cria os INDEX de tipo). Depois, uma linha por dossiê no INDEX do tipo, a partir do `Estado` do CHANGELOG (dossiê sem CHANGELOG: do `INDEX.md` dele). Pasta de QA fora de `doc/demandas/` entra no mesmo mapa.
+2. Demandas: escreva o mapa dossiê → tipo (`setup/lib/migrar_demandas.py`, disponível até a tag `v2.1.0`: `<ws> <mapa>` mostra o plano; `--aplicar` move com `git mv`, reescreve links e cria os INDEX de tipo). Depois, uma linha por dossiê no INDEX do tipo, a partir do `Estado` do CHANGELOG (dossiê sem CHANGELOG: do `INDEX.md` dele). Pasta de QA fora de `doc/demandas/` entra no mesmo mapa.
 3. Ferramentas: `git mv` dos scripts para `tools/`, `README.md` com uma linha por ferramenta, caminhos atualizados em rules, skills e `settings.json`. Credencial e cache para `tools/.local/`.
 4. Rules por serviço: comandos e armadilhas por serviço saem de `rules/code.md` (ou de fichas antigas) para `rules/code/servicos/<serviço>.md`.
 5. Marca: `Versão do DevMove Flow: 2.0.0 (atualizado em <data>)`.

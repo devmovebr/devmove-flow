@@ -1,6 +1,6 @@
 # Fluxo de demanda
 
-Versão do DevMove Flow: 2.1.0 (atualizado em 2026-10-23).
+Versão do DevMove Flow: 2.2.0 (atualizado em 2026-10-23).
 
 Lido pelo orquestrador via `/demanda`, `/retomar`, `/qa` e skills de etapa. Agents não leem este arquivo.
 
@@ -145,10 +145,19 @@ Pré-condição de ambiente é checada pelo orquestrador antes do spawn, nunca d
 
 Script que opera o código ou o ambiente mora em `tools/` na raiz do workspace, um arquivo por ferramenta, listado em `tools/README.md`. Credencial e cache ficam em `tools/.local/`, fora do git.
 
-- A ferramenta é o único caminho do agent até um recurso sensível (banco local, credencial, subida de serviço). Entrada validada, uso no cabeçalho, liberada no `settings.json` pelo padrão `*/tools/*.sh*` (`consumo.py` tem regra própria).
+- A ferramenta é o único caminho do agent até um recurso sensível (banco local, credencial, subida de serviço). Entrada validada, uso no cabeçalho, liberada no `settings.json` pelo padrão `*/tools/*.sh*` (os `.py` têm regra própria).
 - Agent chama pelo caminho absoluto, `<workspace>/tools/<nome>`, onde `<workspace>` é o diretório de trabalho inicial da sessão. O mesmo workspace roda em mais de uma máquina: caminho de máquina nunca entra no harness.
 - Artefato grava só a variável, nunca token ou senha: `TOKEN=$(<workspace>/tools/token.sh <ambiente>)`.
 - Ferramenta nova nasce na demanda que precisou dela e entra no `tools/README.md` e no allow no mesmo turno.
+
+## Versão do harness
+
+O `/demanda` roda `python3 <workspace>/tools/atualizar_framework.py` antes de tudo. Ele compara a marca do topo deste arquivo com a última tag do DevMove Flow e, se houver versão nova da mesma major, faz o merge de 3 vias: regra local fica, regra nova do framework entra.
+- `em dia` ou `sem acesso ao framework`: segue.
+- `atualizado` sem conflito: commit `chore(harness): atualiza devmove flow para <versão>` só dos arquivos listados, uma linha a Ana com a versão, e segue.
+- Conflito (código 1): os arquivos têm marcadores `<<<<<<< aqui` / `>>>>>>> framework`. Gate com cada trecho lado a lado; aprovado, resolve, commita como acima e segue.
+- Bloqueado (código 2: major, harness sujo, sem `devmove-valores.md`): uma linha a Ana e segue a demanda na versão atual.
+`devmove-valores.md` na raiz guarda os valores da instalação e é o que permite renderizar cada versão; mudou valor de projeto (serviço novo, comando), atualize nele também.
 
 ## Mapas: memória compartilhada de código
 
@@ -239,6 +248,7 @@ A sessão do orquestrador segue a mesma lógica, sobre 1M: meta de 40%, ponto de
 - Dev não faz commit, push, stash nem troca de branch.
 - Commit é do orquestrador, depois do gate do `/executar`: um commit por repositório, `git -C <serviço> add` só dos arquivos da demanda, mensagem na convenção de `.claude/rules/code.md`. Plano que pede commit por frente: o orquestrador commita ao fim de cada frente aprovada pelo `rita-revisor-code`.
 - Push, PR e merge só com pedido de Ana.
+- Repositório do workspace: o commit da demanda (`doc/`, `retro.md`) é separado do commit de melhoria do harness (`CLAUDE.md`, `.claude/` fora `retro.md`, `tools/`). Melhoria de harness: um commit por classe, `chore(harness): [framework] <assunto>` para a que vale para qualquer projeto e `chore(harness): [local] <assunto>` para a que só vale aqui. Commit `[framework]` só toca harness e tem o assunto e o corpo sem nome de cliente, serviço ou parceiro: é o que o `/melhoria` do framework lê.
 - Código, comentário, teste e mensagem de commit nunca citam o harness: arquivo de dossiê, "decisão N", pendência `P<n>`, frente `F<n>`, `.claude/`. O comentário afirma a regra; a origem fica no dossiê.
 
 ## Briefing de correção
@@ -299,4 +309,4 @@ Os "Fora de escopo encontrado" dos retornos se acumulam no `CHANGELOG.md`, uma l
 
 ## Retro
 
-Ao fim do `/fechar` (ou do `/executar`, se a demanda não vai ser fechada agora), uma linha em `.claude/retro.md`: `data · demanda · tipo · porte · minutos · rodadas de revisão · ajustes pedidos · fallback · linhas de doc · tokens e chamadas por agent (maior e total) · o que atrasou · ajuste proposto`. Tokens e chamadas vêm do `total` do `consumo.json` (`maior`, `contexto_agents`, `chamadas_agents`); no fallback, das notificações, com ≈. Se a conversão chamadas → tokens real divergir mais de 30% da tabela de orçamento, o ajuste proposto corrige a tabela. O ajuste proposto entra num gate próprio; aprovado, o orquestrador aplica no harness e registra no `CHANGELOG.md` da demanda. Ajuste que vale para qualquer projeto vira proposta para o framework.
+Ao fim do `/fechar` (ou do `/executar`, se a demanda não vai ser fechada agora), uma linha em `.claude/retro.md`: `data · demanda · tipo · porte · minutos · rodadas de revisão · ajustes pedidos · fallback · linhas de doc · tokens e chamadas por agent (maior e total) · o que atrasou · ajuste proposto`. Tokens e chamadas vêm do `total` do `consumo.json` (`maior`, `contexto_agents`, `chamadas_agents`); no fallback, das notificações, com ≈. Se a conversão chamadas → tokens real divergir mais de 30% da tabela de orçamento, o ajuste proposto corrige a tabela. O ajuste proposto entra num gate próprio; aprovado, o orquestrador aplica no harness e registra no `CHANGELOG.md` da demanda. No mesmo gate, cada ajuste ganha a classe `[framework]` ou `[local]` (seção Git).
