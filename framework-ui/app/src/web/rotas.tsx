@@ -6,6 +6,8 @@ import { Demandas } from './telas/Demandas'
 import { Rodada } from './telas/Rodada'
 import { Suite } from './telas/suite/Suite'
 import { Inicio } from './telas/Inicio'
+import { Conversa } from './telas/mensagens/Conversa'
+import { Conversas } from './telas/mensagens/Conversas'
 
 export const roteador = createBrowserRouter([
   { path: '/', element: <Inicio /> },
@@ -14,6 +16,8 @@ export const roteador = createBrowserRouter([
     element: <Shell />,
     children: [
       { index: true, element: <Navigate to="testes" replace /> },
+      { path: 'mensagens', element: <Conversas /> },
+      { path: 'mensagens/:tipo/:slug', element: <Conversa /> },
       { path: 'testes', element: <Demandas /> },
       { path: 'testes/:tipo/:slug', element: <Suite /> },
       { path: 'testes/:tipo/:slug/rodadas/:id', element: <Rodada /> },

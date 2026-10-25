@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
-import { useRota, caminhos } from '../util/caminhos'
+import { useModulo, useRota } from '../util/caminhos'
 import { useAlvosTopo } from './contextoTopo'
 
 export type Migalha = { rotulo: string; para?: string }
@@ -11,7 +11,7 @@ export type Migalha = { rotulo: string; para?: string }
 export function Topo({ migalhas, children }: { migalhas: Migalha[]; children?: ReactNode }) {
   const alvos = useAlvosTopo()
   const { p } = useRota()
-  const todas: Migalha[] = [{ rotulo: p }, { rotulo: 'Testes', para: caminhos.demandas(p) }, ...migalhas]
+  const todas: Migalha[] = [{ rotulo: p }, useModulo(), ...migalhas]
 
   return (
     <>

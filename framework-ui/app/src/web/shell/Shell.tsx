@@ -1,6 +1,7 @@
 import { PanelLeftClose } from 'lucide-react'
 import { useState } from 'react'
 import { Outlet } from 'react-router'
+import { useModulo } from '../util/caminhos'
 import { Sidebar } from './Sidebar'
 import { ContextoTopo } from './contextoTopo'
 
@@ -8,6 +9,7 @@ export function Shell() {
   const [migalhas, setMigalhas] = useState<HTMLElement | null>(null)
   const [acoes, setAcoes] = useState<HTMLElement | null>(null)
   const [recolhida, setRecolhida] = useState(false)
+  const modulo = useModulo()
 
   return (
     <ContextoTopo.Provider value={{ migalhas, acoes }}>
@@ -26,7 +28,7 @@ export function Shell() {
             <div ref={setMigalhas} className="min-w-0 flex-1" />
           </div>
           <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-5 pb-4">
-            <h1 className="text-[22px] font-medium tracking-tight">Testes</h1>
+            <h1 className="text-[22px] font-medium tracking-tight">{modulo.rotulo}</h1>
             <div ref={setAcoes} className="flex items-center gap-1.5" />
           </div>
           <div className="flex min-h-0 flex-1 flex-col">

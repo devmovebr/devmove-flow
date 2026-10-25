@@ -8,6 +8,7 @@ import { repositorio, semMd } from '../runner/banco.ts'
 import { ErroRunner, envioAvulso, iniciarRodada, mudarVeredito } from '../runner/executor.ts'
 import { listarAmbientes } from '../runner/variaveis.ts'
 import { demanda, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos } from '../runner/workspaces.ts'
+import { lerConversa, listarConversas } from './mensagens.ts'
 
 function raizApp(): string {
   let dir = import.meta.dirname
@@ -71,6 +72,12 @@ app.get('/api/projetos', async () => projetos())
 app.get<{ Params: { p: string } }>('/api/projetos/:p/ambientes', async (req) => listarAmbientes(projeto(req.params.p)))
 
 app.get<{ Params: { p: string } }>('/api/projetos/:p/demandas', async (req) => listarDemandas(projeto(req.params.p)))
+
+app.get<{ Params: { p: string } }>('/api/projetos/:p/mensagens', async (req) => listarConversas(projeto(req.params.p)))
+
+app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/mensagens/:d', async (req) =>
+  lerConversa(projeto(req.params.p), dossieDe(req.params.d)),
+)
 
 app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/demandas/:d', async (req) => {
   const ws = projeto(req.params.p)

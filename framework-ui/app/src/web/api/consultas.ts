@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
+  ConversaMc,
+  ConversaMcDetalhe,
   DemandaDetalhe,
   Demanda,
   EnvioResultado,
@@ -23,6 +25,29 @@ export const chaves = {
   matriz: (p: string, d: string, amb: string) => ['matriz', p, d, amb] as const,
   historico: (p: string, d: string, c: string) => ['historico', p, d, c] as const,
   rodada: (p: string, id: number) => ['rodada', p, id] as const,
+  conversas: (p: string) => ['conversas', p] as const,
+  conversa: (p: string, d: string) => ['conversa', p, d] as const,
+}
+
+// A ponte reescreve mensagens-mc.md enquanto a demanda roda; o painel acompanha por polling.
+const AO_VIVO = 2_000
+
+export function useConversas(p: string) {
+  return useQuery({
+    queryKey: chaves.conversas(p),
+    queryFn: () => api<ConversaMc[]>(rotasApi.conversas(p)),
+    refetchInterval: AO_VIVO,
+    enabled: !!p,
+  })
+}
+
+export function useConversa(p: string, d: string) {
+  return useQuery({
+    queryKey: chaves.conversa(p, d),
+    queryFn: () => api<ConversaMcDetalhe>(rotasApi.conversa(p, d)),
+    refetchInterval: AO_VIVO,
+    enabled: !!d,
+  })
 }
 
 export function useInfo() {

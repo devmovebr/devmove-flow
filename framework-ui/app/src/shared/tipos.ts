@@ -119,3 +119,34 @@ export type EnvioResultado = {
   erro: string | null
   assercoes: Assercao[]
 }
+
+// Troca com o Mission Control: `<dossiê>/mensagens-mc.md`, reescrito pela ponte de agentes a cada mensagem.
+export type EnvelopeMc = {
+  messageId?: string
+  type?: string
+  scope?: unknown
+  occurredAt?: string
+  source?: string
+  payload?: Record<string, unknown>
+}
+
+export type MensagemMc = {
+  registrada_em: string
+  direcao: 'recebida' | 'enviada'
+  tipo: string
+  envelope: EnvelopeMc | null
+  bruto: string
+}
+
+export type ConversaMc = {
+  dossie: string
+  tipo: string
+  slug: string
+  item: string | null
+  titulo: string
+  total: number
+  aguardando: number
+  ultima_em: string | null
+}
+
+export type ConversaMcDetalhe = ConversaMc & { mensagens: MensagemMc[] }

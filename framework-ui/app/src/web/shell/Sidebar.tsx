@@ -1,8 +1,11 @@
-import { ChevronsUpDown, FlaskConical, ScrollText } from 'lucide-react'
+import { ChevronsUpDown, FlaskConical, MessagesSquare, ScrollText } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
-import { useInfo, useProjetos } from '../api/consultas'
+import { useConversas, useInfo, useProjetos } from '../api/consultas'
 import { Avatar } from '../ui/Avatar'
 import { caminhos, useRota } from '../util/caminhos'
+
+const classeItem = ({ isActive }: { isActive: boolean }) =>
+  `flex h-8 items-center gap-2.5 rounded-md px-2 text-[12px] ${isActive ? 'bg-superficie-2 font-medium text-texto' : 'text-texto-2 hover:bg-superficie hover:text-texto'}`
 
 function Secao({ titulo }: { titulo: string }) {
   return <div className="px-3 pt-5 pb-2 text-[10px] font-medium tracking-[0.08em] text-texto-3 uppercase">{titulo}</div>
@@ -42,6 +45,8 @@ export function Sidebar() {
   const { p } = useRota()
   const { data: info } = useInfo()
   const usuario = info?.usuario ?? ''
+  const { data: conversas = [] } = useConversas(p)
+  const aguardando = conversas.reduce((n, c) => n + c.aguardando, 0)
   return (
     <aside className="flex w-[216px] shrink-0 flex-col border-r border-borda bg-fundo">
       <div className="flex h-11 items-center gap-2 px-4">
@@ -57,14 +62,21 @@ export function Sidebar() {
 
       <Secao titulo="Menu" />
       <nav className="flex flex-col gap-0.5 px-2">
-        <NavLink
-          to={caminhos.demandas(p)}
-          className={({ isActive }) =>
-            `flex h-8 items-center gap-2.5 rounded-md px-2 text-[12px] ${isActive ? 'bg-superficie-2 font-medium text-texto' : 'text-texto-2 hover:bg-superficie hover:text-texto'}`
-          }
-        >
+        <NavLink to={caminhos.demandas(p)} className={classeItem}>
           <FlaskConical size={14} />
           Testes
+        </NavLink>
+        <NavLink to={caminhos.mensagens(p)} className={classeItem}>
+          <MessagesSquare size={14} />
+          Mensagens
+          {aguardando > 0 && (
+            <span
+              title={`${aguardando} pergunta(s) aguardando resposta no Mission Control`}
+              className="ml-auto rounded-full bg-pendente/15 px-1.5 py-px text-[10px] font-medium text-pendente tabular-nums"
+            >
+              {aguardando}
+            </span>
+          )}
         </NavLink>
         <span aria-disabled className="flex h-8 cursor-not-allowed items-center gap-2.5 rounded-md px-2 text-[12px] text-texto-3">
           <ScrollText size={14} />

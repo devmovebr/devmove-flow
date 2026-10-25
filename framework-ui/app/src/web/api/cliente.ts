@@ -43,4 +43,6 @@ export const rotasApi = {
   parar: (p: string, id: number) => `/projetos/${cod(p)}/rodadas/${id}/parar`,
   execucao: (p: string, id: number) => `/projetos/${cod(p)}/execucoes/${id}`,
   enviar: (p: string) => `/projetos/${cod(p)}/enviar`,
+  conversas: (p: string) => `/projetos/${cod(p)}/mensagens`,
+  conversa: (p: string, d: string) => `/projetos/${cod(p)}/mensagens/${cod(d)}`,
 }
