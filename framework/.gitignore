@@ -6,3 +6,5 @@ code/.revisao/
 tools/.local/*
 !tools/.local/.gitkeep
 .devmove/
+.agents-bridge/
+doc/demandas/*/*/mensagens-mc.md
