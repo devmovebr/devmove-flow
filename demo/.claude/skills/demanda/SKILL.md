@@ -3,7 +3,7 @@ name: demanda
 description: Abre uma demanda (feature, bug ou débito técnico), decide tipo e porte e conduz o fluxo inteiro com gate de aprovação ao fim de cada etapa. Uso: /demanda <nome ou relato>
 disable-model-invocation: true
 ---
-Antes de tudo, `python3 <workspace>/tools/atualizar_framework.py` e o tratamento da saída em `.claude/fluxo.md`, seção Versão do harness. Depois, leia `.claude/fluxo.md`. Ele vale para esta sessão inteira.
+Antes de tudo, `python3 <workspace>/tools/atualizar_framework.py` e o tratamento da saída em `.claude/fluxo.md`, seção Versão do harness. Sem `python3` na máquina (o script nem roda): uma linha a Ana, segue na versão atual e, desde o primeiro spawn, anota no Registro o consumo de cada notificação, porque o `tools/consumo.py` também não vai rodar no `/fechar`. Depois, leia `.claude/fluxo.md`. Ele vale para esta sessão inteira.
 
 `$ARGUMENTS` = nome ou relato. Vazio: lista os dossiês abertos dos `INDEX.md` de `doc/demandas/feature/`, `bug/` e `debito-tecnico/` e pergunta qual. Dossiê que já existe: segue como `/retomar`. Pedido de teste de entrega: segue como `/qa`.
 
