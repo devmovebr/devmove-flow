@@ -8,3 +8,4 @@ Funcionalidade nova ou melhoria, mesmo pequena. Épico mora aqui e aponta as fas
 | [2026-09-01-planos-assinatura](2026-09-01-planos-assinatura/INDEX.md) | G | api, cobranca, web | fechada | nenhum |
 | [2026-09-20-lista-de-espera](2026-09-20-lista-de-espera/INDEX.md) | G | api, mensageria, web | travada (fallback F2) | nenhum |
 | [2026-09-26-remarcacao-pelo-paciente](2026-09-26-remarcacao-pelo-paciente/INDEX.md) | M | api, mensageria, web | plano aprovado (validação 1.0.0; pela 1.1.0 seria G) | lista-de-espera |
+| [2026-10-24-tipo-de-contato](2026-10-24-tipo-de-contato/INDEX.md) | M | api, web | fechada | nenhum |
