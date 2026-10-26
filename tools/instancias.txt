@@ -2,4 +2,4 @@
 # <nome> <url git> <branch> <último commit lido>
 # O último commit é gravado pelo coletar_melhorias.py --marcar ao fim de cada /melhoria.
 mag https://github.com/devmovebr/mag-harness.git main 8823fe7
-unicred https://github.com/devmovebr/unicred-harness.git main 5deec7f
+unicred https://github.com/devmovebr/unicred-harness.git main bb314ec
