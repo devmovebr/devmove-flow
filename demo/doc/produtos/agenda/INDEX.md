@@ -8,4 +8,4 @@ Consulta = profissional + paciente + horário + serviço (procedimento). A clín
 | [fatos.md](fatos.md) | comportamento específico |
 | [hipoteses.md](hipoteses.md) | a demanda pode testar |
 
-Demandas: `2026-08-19-renomear-medico-profissional`, `2026-09-20-lista-de-espera` (em andamento), `2026-10-24-tipo-de-contato` (regra de tipo de paciente planejada).
+Demandas: `2026-08-19-renomear-medico-profissional`, `2026-09-20-lista-de-espera` (em andamento), `2026-10-24-tipo-de-contato` (regra de tipo de paciente planejada), `2026-10-26-desmarcar-consulta-recepcao` (regra de desmarcar planejada).
