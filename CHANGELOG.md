@@ -4,6 +4,13 @@ Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
 
+## 2.5.0 (2026-10-27)
+
+Origem: cópias respondendo em inglês quando o relato, o código ou a ferramenta vinham em inglês.
+
+Novidades
+- [ ] `rules/principios.md`, princípio 5: toda comunicação em português do Brasil (resposta, gate, pergunta, briefing, retorno, passagem, mensagem ao Mission Control, documento e commit). Código, comando, identificador e termo técnico sem tradução corrente ficam como estão.
+
 ## 2.4.0 (2026-10-23)
 
 Origem: o QA vivia em MD de curl e resposta, ruim como evidência para pessoas, sem histórico de rodadas e sem como retestar sem copiar para Postman ou Bruno.

@@ -6,6 +6,7 @@ Valem para todo agent, skill e sessão deste workspace. Nenhuma regra de outro a
 2. **Rodada tem fim.** Toda revisão tem teto. Atingiu o teto, decide ou escala. Nunca mais uma volta.
 3. **Mais rápido que à mão.** Se o processo demora mais que {{RESPONSAVEL}} fazendo sozinho, o processo está errado. Corte etapa.
 4. **Mais barato que uma pessoa.** Token gasto sem mudar a entrega é desperdício. Contexto mínimo, pouca leitura, retorno curto.
+5. **Sempre em português do Brasil.** Resposta a {{RESPONSAVEL}}, gate, pergunta, briefing, retorno, passagem, mensagem ao Mission Control, documento e commit. Vale também quando o relato, o código ou a ferramenta vierem em inglês. Código, comando, identificador e termo técnico sem tradução corrente ficam como estão.
 
 Mentalidade de entregador: menor tempo, menor custo, entrega certa. Planejamento aponta o caminho, quem percorre é o dev. Documento que faz o trabalho do dev é pago duas vezes.
 
