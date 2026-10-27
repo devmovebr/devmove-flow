@@ -1,6 +1,7 @@
 import { Bug, Check, FileCode2, Square, X } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import type { Cenario, Execucao, Placar } from '../../shared/tipos'
+import { contarPlacar } from '../../shared/placar'
+import type { Cenario, Execucao } from '../../shared/tipos'
 import { useDemanda, useParar, useRodada } from '../api/consultas'
 import { useEventosRodada } from '../api/eventos'
 import { Topo } from '../shell/Topo'
@@ -15,18 +16,6 @@ import { caminhoUrl, dataCompleta, slugCurto, tempo } from '../util/formato'
 import { cor, statusRodada, type Situacao } from '../util/veredito'
 
 type Item = { cenario: Cenario; execucao?: Execucao; situacao: Situacao | 'EXECUTANDO' }
-
-function placarLocal(itens: Item[]): Placar {
-  const conta = (s: string) => itens.filter((i) => i.situacao === s).length
-  return {
-    passou: conta('PASSOU'),
-    falhou: conta('FALHOU'),
-    pendente: conta('PENDENTE'),
-    bloqueado: conta('BLOQUEADO'),
-    nao_executado: itens.length - itens.filter((i) => i.execucao).length,
-    total: itens.length,
-  }
-}
 
 function Esperado({ item }: { item: Item }) {
   if (item.execucao) {
@@ -153,7 +142,7 @@ export function Rodada() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Contadores placar={placarLocal(itens)} />
+              <Contadores placar={contarPlacar(itens.flatMap((i) => i.execucao?.veredito ?? []), itens.length)} />
               {ativa && (
                 <Botao variante="perigo" onClick={() => parar.mutate()} disabled={parar.isPending}>
                   <Square size={10} fill="currentColor" />

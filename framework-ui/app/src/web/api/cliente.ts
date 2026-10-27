@@ -26,23 +26,24 @@ export async function api<T>(caminho: string, init?: { method?: string; body?: u
   return (texto ? JSON.parse(texto) : undefined) as T
 }
 
-export const cod = encodeURIComponent
+const cod = encodeURIComponent
+const proj = (p: string) => `/projetos/${cod(p)}`
+const dem = (p: string, d: string) => `${proj(p)}/demandas/${cod(d)}`
 
 export const rotasApi = {
   info: () => '/info',
   projetos: () => '/projetos',
-  ambientes: (p: string) => `/projetos/${cod(p)}/ambientes`,
-  demandas: (p: string) => `/projetos/${cod(p)}/demandas`,
-  demanda: (p: string, d: string) => `/projetos/${cod(p)}/demandas/${cod(d)}`,
-  matriz: (p: string, d: string, ambiente?: string) =>
-    `/projetos/${cod(p)}/demandas/${cod(d)}/matriz${ambiente ? `?ambiente=${cod(ambiente)}` : ''}`,
-  historico: (p: string, d: string, c: string) => `/projetos/${cod(p)}/demandas/${cod(d)}/cenarios/${cod(c)}/historico`,
-  executar: (p: string, d: string) => `/projetos/${cod(p)}/demandas/${cod(d)}/executar`,
-  rodada: (p: string, id: number) => `/projetos/${cod(p)}/rodadas/${id}`,
-  eventos: (p: string, id: number) => `/api/projetos/${cod(p)}/rodadas/${id}/eventos`,
-  parar: (p: string, id: number) => `/projetos/${cod(p)}/rodadas/${id}/parar`,
-  execucao: (p: string, id: number) => `/projetos/${cod(p)}/execucoes/${id}`,
-  enviar: (p: string) => `/projetos/${cod(p)}/enviar`,
-  conversas: (p: string) => `/projetos/${cod(p)}/mensagens`,
-  conversa: (p: string, d: string) => `/projetos/${cod(p)}/mensagens/${cod(d)}`,
+  ambientes: (p: string) => `${proj(p)}/ambientes`,
+  demandas: (p: string) => `${proj(p)}/demandas`,
+  demanda: dem,
+  matriz: (p: string, d: string, ambiente?: string) => `${dem(p, d)}/matriz${ambiente ? `?ambiente=${cod(ambiente)}` : ''}`,
+  historico: (p: string, d: string, c: string) => `${dem(p, d)}/cenarios/${cod(c)}/historico`,
+  executar: (p: string, d: string) => `${dem(p, d)}/executar`,
+  rodada: (p: string, id: number) => `${proj(p)}/rodadas/${id}`,
+  eventos: (p: string, id: number) => `/api${proj(p)}/rodadas/${id}/eventos`,
+  parar: (p: string, id: number) => `${proj(p)}/rodadas/${id}/parar`,
+  execucao: (p: string, id: number) => `${proj(p)}/execucoes/${id}`,
+  enviar: (p: string) => `${proj(p)}/enviar`,
+  conversas: (p: string) => `${proj(p)}/mensagens`,
+  conversa: (p: string, d: string) => `${proj(p)}/mensagens/${cod(d)}`,
 }

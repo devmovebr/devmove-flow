@@ -15,7 +15,8 @@ import {
 import { createElement, useState } from 'react'
 import type { MensagemMc } from '../../../shared/tipos'
 import { Markdown } from '../../ui/Markdown'
-import { direcao, hora, trecho, type Origem, type Visao } from '../../util/mensagens'
+import { hora } from '../../util/formato'
+import { direcao, trecho, type Origem, type Visao } from '../../util/mensagens'
 import { JsonArvore } from '../cenario/JsonArvore'
 
 export type Vinculo = { indice: number; mensagem: MensagemMc; visao: Visao }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
   ConversaMc,
   ConversaMcDetalhe,
@@ -27,6 +27,11 @@ export const chaves = {
   rodada: (p: string, id: number) => ['rodada', p, id] as const,
   conversas: (p: string) => ['conversas', p] as const,
   conversa: (p: string, d: string) => ['conversa', p, d] as const,
+}
+
+// Leituras do projeto que mudam quando uma execução é gravada ou tem o veredito trocado.
+export function invalidarResultados(cliente: QueryClient, p: string, ...outras: string[]) {
+  for (const k of ['demanda', 'demandas', 'historico', 'matriz', ...outras]) cliente.invalidateQueries({ queryKey: [k, p] })
 }
 
 // A ponte reescreve mensagens-mc.md enquanto a demanda roda; o painel acompanha por polling.
@@ -124,11 +129,7 @@ export function useAtualizarExecucao(p: string) {
   return useMutation({
     mutationFn: ({ id, ...corpo }: { id: number; veredito: Veredito; nota: string | null }) =>
       api<Execucao>(rotasApi.execucao(p, id), { method: 'PATCH', body: corpo }),
-    onSuccess: () => {
-      for (const chave of ['historico', 'rodada', 'demanda', 'demandas', 'matriz']) {
-        cliente.invalidateQueries({ queryKey: [chave, p] })
-      }
-    },
+    onSuccess: () => invalidarResultados(cliente, p, 'rodada'),
   })
 }
 

@@ -1,28 +1,20 @@
 const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
-function paraData(valor: string): Date {
-  return /^\d{4}-\d{2}-\d{2}$/.test(valor) ? new Date(`${valor}T12:00:00`) : new Date(valor)
-}
-
 const dois = (n: number) => String(n).padStart(2, '0')
 
-export function dataCurta(valor: string): string {
-  const d = paraData(valor)
-  if (Number.isNaN(d.getTime())) return valor
-  return `${d.getDate()} ${meses[d.getMonth()]} ${dois(d.getHours())}:${dois(d.getMinutes())}`
+// Data sem hora (`2026-09-14`) é lida ao meio-dia local para não virar o dia anterior em fusos negativos.
+function formatar(valor: string, f: (d: Date) => string): string {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? new Date(`${valor}T12:00:00`) : new Date(valor)
+  return Number.isNaN(d.getTime()) ? valor : f(d)
 }
 
-export function dataDia(valor: string): string {
-  const d = paraData(valor)
-  if (Number.isNaN(d.getTime())) return valor
-  return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`
-}
+const dia = (d: Date) => `${d.getDate()} ${meses[d.getMonth()]}`
+const hm = (d: Date) => `${dois(d.getHours())}:${dois(d.getMinutes())}`
 
-export function dataCompleta(valor: string): string {
-  const d = paraData(valor)
-  if (Number.isNaN(d.getTime())) return valor
-  return `${dataDia(valor)}, ${dois(d.getHours())}:${dois(d.getMinutes())}`
-}
+export const dataCurta = (valor: string) => formatar(valor, (d) => `${dia(d)} ${hm(d)}`)
+export const dataDia = (valor: string) => formatar(valor, (d) => `${dia(d)} ${d.getFullYear()}`)
+export const dataCompleta = (valor: string) => formatar(valor, (d) => `${dia(d)} ${d.getFullYear()}, ${hm(d)}`)
+export const hora = (valor: string) => formatar(valor, (d) => `${hm(d)}:${dois(d.getSeconds())}`)
 
 export function tempo(ms: number): string {
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} s`

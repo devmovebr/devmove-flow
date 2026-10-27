@@ -73,8 +73,8 @@ export function Demandas() {
   const [filtro, setFiltro] = useState('todas')
 
   const lista = data ?? []
-  const status = [...new Set(lista.map((d) => statusCurto(d.status)))].sort()
-  const visiveis = filtro === 'todas' ? lista : lista.filter((d) => statusCurto(d.status) === filtro)
+  const porStatus = Map.groupBy(lista, (d) => statusCurto(d.status))
+  const visiveis = filtro === 'todas' ? lista : (porStatus.get(filtro) ?? [])
 
   return (
     <>
@@ -85,7 +85,7 @@ export function Demandas() {
           aoMudar={setFiltro}
           opcoes={[
             { valor: 'todas', rotulo: 'Todas', contagem: lista.length },
-            ...status.map((s) => ({ valor: s, rotulo: s, contagem: lista.filter((d) => statusCurto(d.status) === s).length })),
+            ...[...porStatus.keys()].sort().map((s) => ({ valor: s, rotulo: s, contagem: porStatus.get(s)!.length })),
           ]}
         />
         <span className="text-[11px] text-texto-3">placar atual por cenário</span>

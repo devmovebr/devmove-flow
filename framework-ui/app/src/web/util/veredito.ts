@@ -20,8 +20,8 @@ export const cor: Record<Situacao, string> = {
 
 export const vereditos: Veredito[] = ['PASSOU', 'FALHOU', 'PENDENTE', 'BLOQUEADO']
 
-export function percentual(placar: Placar): number {
-  return placar.total ? Math.round((placar.passou / placar.total) * 100) : 0
+export function percentual(placar: Placar, campo: 'passou' | 'falhou' = 'passou'): number {
+  return placar.total ? Math.round((placar[campo] / placar.total) * 100) : 0
 }
 
 export function executados(placar: Placar): number {

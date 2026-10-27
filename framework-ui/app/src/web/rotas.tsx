@@ -1,13 +1,12 @@
+import type { ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import { Shell } from './shell/Shell'
-import { Cenario } from './telas/cenario/Cenario'
-import { Comparar } from './telas/Comparar'
-import { Demandas } from './telas/Demandas'
-import { Rodada } from './telas/Rodada'
-import { Suite } from './telas/suite/Suite'
 import { Inicio } from './telas/Inicio'
-import { Conversa } from './telas/mensagens/Conversa'
-import { Conversas } from './telas/mensagens/Conversas'
+
+// Cada tela vira um chunk carregado na primeira visita; o shell vem no bundle inicial.
+const tela = <K extends string>(carregar: () => Promise<Record<K, ComponentType>>, nome: K) => ({
+  lazy: async () => ({ Component: (await carregar())[nome] }),
+})
 
 export const roteador = createBrowserRouter([
   { path: '/', element: <Inicio /> },
@@ -16,13 +15,13 @@ export const roteador = createBrowserRouter([
     element: <Shell />,
     children: [
       { index: true, element: <Navigate to="testes" replace /> },
-      { path: 'mensagens', element: <Conversas /> },
-      { path: 'mensagens/:tipo/:slug', element: <Conversa /> },
-      { path: 'testes', element: <Demandas /> },
-      { path: 'testes/:tipo/:slug', element: <Suite /> },
-      { path: 'testes/:tipo/:slug/rodadas/:id', element: <Rodada /> },
-      { path: 'testes/:tipo/:slug/cenarios/:c', element: <Cenario /> },
-      { path: 'testes/:tipo/:slug/comparar', element: <Comparar /> },
+      { path: 'mensagens', ...tela(() => import('./telas/mensagens/Conversas'), 'Conversas') },
+      { path: 'mensagens/:tipo/:slug', ...tela(() => import('./telas/mensagens/Conversa'), 'Conversa') },
+      { path: 'testes', ...tela(() => import('./telas/Demandas'), 'Demandas') },
+      { path: 'testes/:tipo/:slug', ...tela(() => import('./telas/suite/Suite'), 'Suite') },
+      { path: 'testes/:tipo/:slug/rodadas/:id', ...tela(() => import('./telas/Rodada'), 'Rodada') },
+      { path: 'testes/:tipo/:slug/cenarios/:c', ...tela(() => import('./telas/cenario/Cenario'), 'Cenario') },
+      { path: 'testes/:tipo/:slug/comparar', ...tela(() => import('./telas/Comparar'), 'Comparar') },
     ],
   },
 ])

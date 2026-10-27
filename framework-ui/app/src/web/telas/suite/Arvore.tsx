@@ -85,8 +85,7 @@ export function Arvore() {
   const { data, isPending, error } = useDemandas(p)
   if (isPending) return <Carregando />
   if (error) return <Erro erro={error} />
-  const porTipo = new Map<string, Demanda[]>()
-  for (const x of data) porTipo.set(x.tipo, [...(porTipo.get(x.tipo) ?? []), x])
+  const porTipo = Map.groupBy(data, (x) => x.tipo)
   return (
     <ul className="px-2">
       {[...porTipo].map(([tipo, lista]) => (

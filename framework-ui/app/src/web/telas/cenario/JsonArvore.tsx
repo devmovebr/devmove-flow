@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 
 function Primitivo({ valor }: { valor: unknown }) {
   if (valor === null) return <span className="text-texto-3">null</span>
@@ -66,7 +66,7 @@ function No({ chave, valor, nivel, ultimo }: { chave?: string; valor: unknown; n
   )
 }
 
-export function JsonArvore({ texto }: { texto: string }) {
+export const JsonArvore = memo(function JsonArvore({ texto }: { texto: string }) {
   let valor: unknown
   try {
     valor = JSON.parse(texto)
@@ -78,4 +78,4 @@ export function JsonArvore({ texto }: { texto: string }) {
       <No valor={valor} nivel={0} ultimo />
     </div>
   )
-}
+})

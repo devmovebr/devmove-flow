@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import type { Execucao, Rodada } from '../../shared/tipos'
 import { rotasApi } from './cliente'
-import { chaves, type RodadaDetalhe } from './consultas'
+import { chaves, invalidarResultados, type RodadaDetalhe } from './consultas'
 
 type Ouvintes = { aoExecutar?: (e: Execucao) => void; aoTerminar?: (r: Rodada) => void }
 
@@ -32,7 +32,7 @@ export function useEventosRodada(p: string, id: number | null, ativo: boolean, o
     fonte.addEventListener('fim', (ev) => {
       const rodada = JSON.parse((ev as MessageEvent<string>).data) as Rodada
       cliente.setQueryData<RodadaDetalhe>(chave, (atual) => (atual ? { ...atual, ...rodada } : atual))
-      for (const k of ['demanda', 'demandas', 'historico', 'matriz']) cliente.invalidateQueries({ queryKey: [k, p] })
+      invalidarResultados(cliente, p)
       ref.current.aoTerminar?.(rodada)
       fonte.close()
     })

@@ -1,15 +1,15 @@
 import { Bug, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router'
-import type { Cenario, Execucao, Rodada } from '../../../shared/tipos'
+import type { Cenario, ExecucaoResumo, Rodada } from '../../../shared/tipos'
 import { Avatar } from '../../ui/Avatar'
 import { IconeVeredito } from '../../ui/IconeVeredito'
 import { Metodo } from '../../ui/Metodo'
 import { caminhos, useRota } from '../../util/caminhos'
 import { caminhoUrl, dataCurta, tempo } from '../../util/formato'
 
-type Props = { cenarios: Cenario[]; execucoes: Execucao[]; rodada: Rodada | null }
+type Props = { cenarios: Cenario[]; execucoes: ExecucaoResumo[]; rodada: Rodada | null }
 
-function LinhaCenario({ cenario, execucao, rodada, executando }: { cenario: Cenario; execucao?: Execucao; rodada: Rodada | null; executando: boolean }) {
+function LinhaCenario({ cenario, execucao, rodada, executando }: { cenario: Cenario; execucao?: ExecucaoResumo; rodada: Rodada | null; executando: boolean }) {
   const { p, d } = useRota()
   const autor = (execucao?.rodada ?? rodada)?.autor
 

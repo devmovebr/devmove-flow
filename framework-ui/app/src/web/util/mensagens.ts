@@ -85,14 +85,6 @@ export function direcao(m: MensagemMc): string {
   return m.direcao === 'recebida' ? 'MC → harness' : 'harness → MC'
 }
 
-const dois = (n: number) => String(n).padStart(2, '0')
-
-export function hora(valor: string): string {
-  const d = new Date(valor)
-  if (Number.isNaN(d.getTime())) return valor
-  return `${dois(d.getHours())}:${dois(d.getMinutes())}:${dois(d.getSeconds())}`
-}
-
 export function trecho(md: string | null, max = 90): string {
   const t = (md ?? '').replace(/[#*_`>|-]+/g, ' ').replace(/\s+/g, ' ').trim()
   return t.length > max ? `${t.slice(0, max - 1)}…` : t
