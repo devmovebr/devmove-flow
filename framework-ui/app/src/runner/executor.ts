@@ -176,10 +176,7 @@ export function mudarVeredito(ws: string, execucaoId: number, veredito: string, 
   const e = repo.execucao(execucaoId)
   if (!e) throw new ErroRunner(`execução #${execucaoId} não existe`, 404)
   repo.mudarVeredito(execucaoId, v, nota?.trim() || null)
-  const rodada = repo.db.prepare('select dossie, ambiente from rodadas where id = ?').get(e.rodada_id) as {
-    dossie: string
-    ambiente: string
-  }
-  gerarEvidencia(ws, rodada.dossie, rodada.ambiente)
+  const { dossie, ambiente } = repo.localDaRodada(e.rodada_id)!
+  gerarEvidencia(ws, dossie, ambiente)
   return semMd(repo.execucao(execucaoId)!)
 }

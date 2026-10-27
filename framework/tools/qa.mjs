@@ -6,6 +6,18 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+// src/shared/placar.ts
+var CAMPO = { PASSOU: "passou", FALHOU: "falhou", BLOQUEADO: "bloqueado", PENDENTE: "pendente" };
+function placarDe(c, total) {
+  const feitos = c.passou + c.falhou + c.bloqueado + c.pendente;
+  return { ...c, nao_executado: Math.max(0, total - feitos), total };
+}
+function contarPlacar(vereditos, total) {
+  const c = { passou: 0, falhou: 0, bloqueado: 0, pendente: 0 };
+  for (const v of vereditos) c[CAMPO[v] ?? "pendente"]++;
+  return placarDe(c, total);
+}
+
 // src/runner/migracoes.ts
 var migracoes = [
   {
@@ -40,14 +52,16 @@ var migracoes = [
       create index rodadas_dossie on rodadas(dossie, id);
       create index execucoes_rodada on execucoes(rodada_id, ordem);
     `
+  },
+  {
+    // Cobre placar, estado atual e histórico sem ler a linha inteira: veredito e executada_em vêm depois dos JSON grandes.
+    versao: 2,
+    sql: "create index execucoes_cenario on execucoes(rodada_id, cenario, executada_em, veredito);"
   }
 ];
 
 // src/runner/banco.ts
-var abertos = /* @__PURE__ */ new Map();
 function abrirBanco(ws) {
-  const existente = abertos.get(ws);
-  if (existente) return existente;
   const dir = join(ws, ".devmove");
   mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(join(dir, "devmove.db"));
@@ -68,106 +82,129 @@ function abrirBanco(ws) {
       throw e;
     }
   }
-  abertos.set(ws, db);
   return db;
 }
 function paraExecucao(l) {
   return {
-    id: l.id,
-    rodada_id: l.rodada_id,
-    cenario: l.cenario,
-    titulo: l.titulo,
-    ordem: l.ordem,
-    cenario_md: l.cenario_md,
+    ...l,
     request: JSON.parse(l.request),
     resposta: l.resposta ? JSON.parse(l.resposta) : null,
-    erro: l.erro,
-    assercoes: JSON.parse(l.assercoes),
-    veredito: l.veredito,
-    veredito_auto: l.veredito_auto,
-    nota: l.nota,
-    executada_em: l.executada_em
+    assercoes: JSON.parse(l.assercoes)
   };
+}
+function paraRodada({ passou, falhou, bloqueado, pendente, ...r }, total) {
+  return { ...r, placar: placarDe({ passou, falhou, bloqueado, pendente }, total) };
 }
 function semMd(e) {
   const { cenario_md: _, ...resto } = e;
   return resto;
 }
+var RODADA = `select r.*,
+    count(e.id) filter (where e.veredito = 'PASSOU') as passou,
+    count(e.id) filter (where e.veredito = 'FALHOU') as falhou,
+    count(e.id) filter (where e.veredito = 'BLOQUEADO') as bloqueado,
+    count(e.id) filter (where e.veredito not in ('PASSOU', 'FALHOU', 'BLOQUEADO')) as pendente
+  from rodadas r left join execucoes e on e.rodada_id = r.id`;
+var ULTIMAS = `select e.id, r.ambiente,
+    row_number() over (partition by r.ambiente, e.cenario order by e.executada_em desc, e.id desc) as n
+  from execucoes e join rodadas r on r.id = e.rodada_id
+  where r.dossie = :dossie and (:ambiente is null or r.ambiente = :ambiente)`;
 var Repositorio = class {
   db;
+  preparadas = /* @__PURE__ */ new Map();
   constructor(db) {
     this.db = db;
   }
-  placar(rodadaId, total) {
-    const linhas = this.db.prepare("select veredito, count(*) as n from execucoes where rodada_id = ? group by veredito").all(rodadaId);
-    return placarDe(linhas, total);
-  }
-  // Ambientes ordenados pela execução mais recente.
-  ambientesComExecucao(dossie) {
-    return this.db.prepare(
-      `select r.ambiente from execucoes e join rodadas r on r.id = e.rodada_id
-           where r.dossie = ? group by r.ambiente order by max(e.executada_em) desc`
-    ).all(dossie).map((l) => l.ambiente);
-  }
-  estadoAtual(dossie, ambiente, cenarios) {
-    const linhas = this.db.prepare(
-      `select e.* from execucoes e join rodadas r on r.id = e.rodada_id
-         where r.dossie = ? and r.ambiente = ? order by e.executada_em desc, e.id desc`
-    ).all(dossie, ambiente);
-    const ultimas = /* @__PURE__ */ new Map();
-    for (const l of linhas) if (cenarios.includes(l.cenario) && !ultimas.has(l.cenario)) ultimas.set(l.cenario, l);
-    if (!ultimas.size) return null;
-    const rodadas = /* @__PURE__ */ new Map();
-    const execucoes = [...ultimas.values()].map((l) => {
-      if (!rodadas.has(l.rodada_id)) rodadas.set(l.rodada_id, this.rodada(l.rodada_id, cenarios.length));
-      return { ...semMd(paraExecucao(l)), rodada: rodadas.get(l.rodada_id) };
-    }).sort((a, b) => a.ordem - b.ordem);
-    const contagem = /* @__PURE__ */ new Map();
-    for (const e of execucoes) contagem.set(e.veredito, (contagem.get(e.veredito) ?? 0) + 1);
-    return {
-      ambiente,
-      atualizado_em: execucoes.reduce((m, e) => e.executada_em > m ? e.executada_em : m, ""),
-      placar: placarDe([...contagem].map(([veredito, n]) => ({ veredito, n })), cenarios.length),
-      execucoes
-    };
-  }
-  estados(dossie, cenarios) {
-    return this.ambientesComExecucao(dossie).map((a) => this.estadoAtual(dossie, a, cenarios)).filter((e) => e !== null);
-  }
-  comPlacar(l, total) {
-    return l ? { ...l, placar: this.placar(l.id, total) } : null;
+  sql(texto) {
+    let s = this.preparadas.get(texto);
+    if (!s) this.preparadas.set(texto, s = this.db.prepare(texto));
+    return s;
   }
   rodada(id, total) {
-    return this.comPlacar(this.db.prepare("select * from rodadas where id = ?").get(id), total);
+    const l = this.sql(`${RODADA} where r.id = ? group by r.id`).get(id);
+    return l ? paraRodada(l, total) : null;
   }
   rodadas(dossie, total, ambiente) {
-    const linhas = ambiente ? this.db.prepare("select * from rodadas where dossie = ? and ambiente = ? order by id desc").all(dossie, ambiente) : this.db.prepare("select * from rodadas where dossie = ? order by id desc").all(dossie);
-    return linhas.map((l) => this.comPlacar(l, total));
+    const linhas = this.sql(`${RODADA} where r.dossie = :dossie and (:ambiente is null or r.ambiente = :ambiente) group by r.id order by r.id desc`).all({ dossie, ambiente: ambiente ?? null });
+    return linhas.map((l) => paraRodada(l, total));
+  }
+  rodadasPorId(ids, total) {
+    const linhas = this.sql(`${RODADA} where r.id in (select value from json_each(?)) group by r.id`).all(JSON.stringify([...new Set(ids)]));
+    return new Map(linhas.map((l) => [l.id, paraRodada(l, total)]));
   }
   ultimaRodada(dossie, total) {
-    return this.comPlacar(
-      this.db.prepare("select * from rodadas where dossie = ? order by id desc limit 1").get(dossie),
-      total
+    const l = this.sql(`${RODADA} where r.dossie = ? group by r.id order by r.id desc limit 1`).get(dossie);
+    return l ? paraRodada(l, total) : null;
+  }
+  // Um estado por ambiente, o de execução mais recente primeiro. Só entram cenários que ainda estão no plano.
+  estados(dossie, cenarios) {
+    const linhas = this.sql(
+      `select u.ambiente, e.id, e.rodada_id, e.cenario, e.titulo, e.ordem, e.veredito, e.executada_em,
+         json_extract(e.resposta, '$.status') as status, json_extract(e.resposta, '$.tempo_ms') as tempo_ms
+       from (${ULTIMAS}) u join execucoes e on e.id = u.id where u.n = 1`
+    ).all({ dossie, ambiente: null });
+    const noPlano = new Set(cenarios);
+    const porAmbiente = Map.groupBy(
+      linhas.filter((l) => noPlano.has(l.cenario)),
+      (l) => l.ambiente
     );
+    const rodadas = this.rodadasPorId(
+      linhas.map((l) => l.rodada_id),
+      cenarios.length
+    );
+    return [...porAmbiente].map(([ambiente, ls]) => {
+      const execucoes = ls.sort((a, b) => a.ordem - b.ordem).map((l) => {
+        const { ambiente: _, status, tempo_ms, ...e } = l;
+        return { ...e, resposta: status === null ? null : { status, tempo_ms: tempo_ms ?? 0 }, rodada: rodadas.get(e.rodada_id) };
+      });
+      return {
+        ambiente,
+        atualizado_em: execucoes.reduce((m, e) => e.executada_em > m ? e.executada_em : m, ""),
+        placar: contarPlacar(
+          execucoes.map((e) => e.veredito),
+          cenarios.length
+        ),
+        execucoes
+      };
+    }).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em));
+  }
+  ultimasExecucoes(dossie, ambiente) {
+    const linhas = this.sql(`select e.* from (${ULTIMAS}) u join execucoes e on e.id = u.id where u.n = 1`).all({ dossie, ambiente });
+    return linhas.map(paraExecucao);
+  }
+  vereditos(dossie, ambiente) {
+    return this.sql(
+      `select e.rodada_id, e.cenario, e.titulo, e.veredito from execucoes e join rodadas r on r.id = e.rodada_id
+       where r.dossie = :dossie and (:ambiente is null or r.ambiente = :ambiente) order by e.rodada_id, e.ordem, e.id`
+    ).all({ dossie, ambiente: ambiente ?? null });
+  }
+  localDaRodada(id) {
+    return this.sql("select dossie, ambiente from rodadas where id = ?").get(id);
   }
   emExecucao(dossie) {
-    return this.db.prepare("select * from rodadas where dossie = ? and status = 'executando' order by id desc limit 1").get(dossie);
+    return this.sql("select * from rodadas where dossie = ? and status = 'executando' order by id desc limit 1").get(dossie);
   }
   ultimaAtividade(rodadaId) {
-    const r = this.db.prepare("select max(executada_em) as m from execucoes where rodada_id = ?").get(rodadaId);
+    const r = this.sql("select max(executada_em) as m from execucoes where rodada_id = ?").get(rodadaId);
     return r.m ?? "";
   }
   criarRodada(r) {
-    const res = this.db.prepare("insert into rodadas (dossie, ambiente, origem, autor, status, iniciada_em) values (?, ?, ?, ?, 'executando', ?)").run(r.dossie, r.ambiente, r.origem, r.autor, r.iniciada_em);
+    const res = this.sql("insert into rodadas (dossie, ambiente, origem, autor, status, iniciada_em) values (?, ?, ?, ?, 'executando', ?)").run(
+      r.dossie,
+      r.ambiente,
+      r.origem,
+      r.autor,
+      r.iniciada_em
+    );
     return Number(res.lastInsertRowid);
   }
   finalizarRodada(id, status) {
-    this.db.prepare("update rodadas set status = ?, finalizada_em = ? where id = ?").run(status, (/* @__PURE__ */ new Date()).toISOString(), id);
+    this.sql("update rodadas set status = ?, finalizada_em = ? where id = ?").run(status, (/* @__PURE__ */ new Date()).toISOString(), id);
   }
   inserirExecucao(e) {
-    const res = this.db.prepare(
+    const res = this.sql(
       `insert into execucoes (rodada_id, cenario, titulo, ordem, cenario_md, request, resposta, erro, assercoes,
-          veredito, veredito_auto, nota, executada_em) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        veredito, veredito_auto, nota, executada_em) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       e.rodada_id,
       e.cenario,
@@ -186,59 +223,38 @@ var Repositorio = class {
     return Number(res.lastInsertRowid);
   }
   execucao(id) {
-    const l = this.db.prepare("select * from execucoes where id = ?").get(id);
+    const l = this.sql("select * from execucoes where id = ?").get(id);
     return l ? paraExecucao(l) : null;
   }
   execucoesDaRodada(rodadaId) {
-    return this.db.prepare("select * from execucoes where rodada_id = ? order by ordem, id").all(rodadaId).map(
-      paraExecucao
-    );
-  }
-  execucoesDoDossie(dossie, ambiente) {
-    const sql = `select e.*, r.ambiente from execucoes e join rodadas r on r.id = e.rodada_id
-      where r.dossie = ? ${ambiente ? "and r.ambiente = ?" : ""} order by e.executada_em desc, e.id desc`;
-    const args = ambiente ? [dossie, ambiente] : [dossie];
-    return this.db.prepare(sql).all(...args).map((l) => ({
-      ...paraExecucao(l),
-      ambiente: l.ambiente
-    }));
+    return this.sql("select * from execucoes where rodada_id = ? order by ordem, id").all(rodadaId).map(paraExecucao);
   }
   historico(dossie, cenario) {
-    return this.db.prepare(
+    return this.sql(
       `select e.* from execucoes e join rodadas r on r.id = e.rodada_id
-           where r.dossie = ? and e.cenario = ? order by e.executada_em desc, e.id desc`
+         where r.dossie = ? and e.cenario = ? order by e.executada_em desc, e.id desc`
     ).all(dossie, cenario).map(paraExecucao);
   }
   ultimaExecucao(dossie, ambiente, cenario) {
-    const l = this.db.prepare(
+    const l = this.sql(
       `select e.* from execucoes e join rodadas r on r.id = e.rodada_id
-         where r.dossie = ? and r.ambiente = ? and e.cenario = ? order by e.executada_em desc, e.id desc limit 1`
+       where r.dossie = ? and r.ambiente = ? and e.cenario = ? order by e.executada_em desc, e.id desc limit 1`
     ).get(dossie, ambiente, cenario);
     return l ? paraExecucao(l) : null;
   }
   mudarVeredito(id, veredito, nota) {
-    this.db.prepare("update execucoes set veredito = ?, nota = ? where id = ?").run(veredito, nota, id);
+    this.sql("update execucoes set veredito = ?, nota = ? where id = ?").run(veredito, nota, id);
   }
 };
+var repositorios = /* @__PURE__ */ new Map();
 function repositorio(ws) {
-  return new Repositorio(abrirBanco(ws));
-}
-function placarDe(linhas, total) {
-  const p = { passou: 0, falhou: 0, bloqueado: 0, pendente: 0, nao_executado: 0, total };
-  let feitos = 0;
-  for (const l of linhas) {
-    feitos += l.n;
-    if (l.veredito === "PASSOU") p.passou = l.n;
-    else if (l.veredito === "FALHOU") p.falhou = l.n;
-    else if (l.veredito === "BLOQUEADO") p.bloqueado = l.n;
-    else p.pendente = l.n;
-  }
-  p.nao_executado = Math.max(0, total - feitos);
-  return p;
+  let r = repositorios.get(ws);
+  if (!r) repositorios.set(ws, r = new Repositorio(abrirBanco(ws)));
+  return r;
 }
 
 // src/runner/evidencia.ts
-import { existsSync as existsSync3, mkdirSync as mkdirSync2, readFileSync as readFileSync3, writeFileSync } from "node:fs";
+import { existsSync as existsSync3, mkdirSync as mkdirSync2, readFileSync as readFileSync4, writeFileSync } from "node:fs";
 import { join as join4 } from "node:path";
 
 // node_modules/jsonpath-plus/dist/index-node-esm.js
@@ -2780,8 +2796,21 @@ function parsearHttp(raw) {
 }
 
 // src/runner/workspaces.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2, readdirSync as readdirSync2, statSync } from "node:fs";
+import { existsSync as existsSync2, readFileSync as readFileSync3, readdirSync as readdirSync2, statSync as statSync2 } from "node:fs";
 import { basename, dirname, join as join3, resolve } from "node:path";
+
+// src/runner/arquivos.ts
+import { readFileSync as readFileSync2, statSync } from "node:fs";
+var lidos = /* @__PURE__ */ new Map();
+function lerCacheado(arq, parse) {
+  const st = statSync(arq);
+  const assinatura = `${st.mtimeMs}:${st.size}`;
+  const lido = lidos.get(arq);
+  if (lido?.assinatura === assinatura) return lido.valor;
+  const valor = parse(readFileSync2(arq, "utf8"));
+  lidos.set(arq, { assinatura, valor });
+  return valor;
+}
 
 // src/runner/erros.ts
 var ErroRunner = class extends Error {
@@ -2811,11 +2840,14 @@ function normalizarDossie(arg) {
 function pastaDossie(ws, dossie) {
   return join3(ws, "doc", "demandas", dossie);
 }
-function lerSuite(ws, dossie) {
+function validarDossie(dossie) {
   if (!/^[^/.][^/]*\/[^/.][^/]*$/.test(dossie)) throw new ErroRunner(`dossi\xEA inv\xE1lido: ${dossie}`);
-  const arq = join3(pastaDossie(ws, dossie), "plano-teste.md");
+  return dossie;
+}
+function lerSuite(ws, dossie) {
+  const arq = join3(pastaDossie(ws, validarDossie(dossie)), "plano-teste.md");
   if (!existsSync2(arq)) throw new ErroRunner(`plano-teste.md n\xE3o encontrado em doc/demandas/${dossie}`, 404);
-  return parsearPlano(readFileSync2(arq, "utf8"));
+  return lerCacheado(arq, parsearPlano);
 }
 
 // src/runner/evidencia.ts
@@ -2853,8 +2885,8 @@ function origens(ws, amb, suite) {
   const r = {};
   const arqAmb = join4(ws, "tools", "ambientes", `${amb}.env`);
   const camadas = [
-    [existsSync3(arqAmb) ? lerEnv(readFileSync3(arqAmb, "utf8")) : {}, false],
-    [existsSync3(arquivoLocal(ws, amb)) ? lerEnv(readFileSync3(arquivoLocal(ws, amb), "utf8")) : {}, true],
+    [existsSync3(arqAmb) ? lerEnv(readFileSync4(arqAmb, "utf8")) : {}, false],
+    [existsSync3(arquivoLocal(ws, amb)) ? lerEnv(readFileSync4(arquivoLocal(ws, amb), "utf8")) : {}, true],
     [suite, false]
   ];
   for (const [valores, local] of camadas) {
@@ -2895,11 +2927,12 @@ function obtidoTexto(v) {
 function gerarEvidencia(ws, dossie, amb) {
   const repo = repositorio(ws);
   const suite = lerSuite(ws, dossie);
-  const ultimas = /* @__PURE__ */ new Map();
-  for (const e of repo.execucoesDoDossie(dossie, amb)) if (!ultimas.has(e.cenario)) ultimas.set(e.cenario, e);
+  const ultimas = new Map(repo.ultimasExecucoes(dossie, amb).map((e) => [e.cenario, e]));
   if (!ultimas.size) return null;
-  const rodadas = /* @__PURE__ */ new Map();
-  for (const e of ultimas.values()) if (!rodadas.has(e.rodada_id)) rodadas.set(e.rodada_id, repo.rodada(e.rodada_id, suite.cenarios.length));
+  const rodadas = repo.rodadasPorId(
+    [...ultimas.values()].map((e) => e.rodada_id),
+    suite.cenarios.length
+  );
   const listaRodadas = [...rodadas.values()].sort((a, b) => a.id - b.id).map((r) => `#${r.id} (${r.origem}, ${dataCurta(r.iniciada_em)})`);
   const execs = suite.cenarios.map((c) => ultimas.get(c.id)).filter((e) => !!e);
   for (const e of ultimas.values()) if (!execs.includes(e)) execs.push(e);
@@ -3104,8 +3137,8 @@ function mudarVeredito(ws, execucaoId, veredito, nota) {
   const e = repo.execucao(execucaoId);
   if (!e) throw new ErroRunner(`execu\xE7\xE3o #${execucaoId} n\xE3o existe`, 404);
   repo.mudarVeredito(execucaoId, v, nota?.trim() || null);
-  const rodada = repo.db.prepare("select dossie, ambiente from rodadas where id = ?").get(e.rodada_id);
-  gerarEvidencia(ws, rodada.dossie, rodada.ambiente);
+  const { dossie, ambiente } = repo.localDaRodada(e.rodada_id);
+  gerarEvidencia(ws, dossie, ambiente);
   return semMd(repo.execucao(execucaoId));
 }
 

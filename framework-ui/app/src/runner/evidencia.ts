@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Rodada } from '../shared/tipos.ts'
 import { type ExecucaoCompleta, repositorio } from './banco.ts'
 import { parsearCenario } from './parser.ts'
 import { arquivoLocal, lerEnv, nomesUsados } from './variaveis.ts'
@@ -97,12 +96,13 @@ function obtidoTexto(v: unknown): string {
 export function gerarEvidencia(ws: string, dossie: string, amb: string): string | null {
   const repo = repositorio(ws)
   const suite = lerSuite(ws, dossie)
-  const ultimas = new Map<string, ExecucaoCompleta>()
-  for (const e of repo.execucoesDoDossie(dossie, amb)) if (!ultimas.has(e.cenario)) ultimas.set(e.cenario, e)
+  const ultimas = new Map(repo.ultimasExecucoes(dossie, amb).map((e) => [e.cenario, e]))
   if (!ultimas.size) return null
 
-  const rodadas = new Map<number, Rodada>()
-  for (const e of ultimas.values()) if (!rodadas.has(e.rodada_id)) rodadas.set(e.rodada_id, repo.rodada(e.rodada_id, suite.cenarios.length)!)
+  const rodadas = repo.rodadasPorId(
+    [...ultimas.values()].map((e) => e.rodada_id),
+    suite.cenarios.length,
+  )
   const listaRodadas = [...rodadas.values()]
     .sort((a, b) => a.id - b.id)
     .map((r) => `#${r.id} (${r.origem}, ${dataCurta(r.iniciada_em)})`)

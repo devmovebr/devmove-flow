@@ -3,11 +3,11 @@ import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyError } from 'fastify'
-import type { Execucao, Info, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
+import type { DemandaDetalhe, Execucao, Info, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
 import { repositorio, semMd } from '../runner/banco.ts'
 import { ErroRunner, envioAvulso, iniciarRodada, mudarVeredito } from '../runner/executor.ts'
 import { listarAmbientes } from '../runner/variaveis.ts'
-import { demanda, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos } from '../runner/workspaces.ts'
+import { demanda, idsCenarios, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos, validarDossie } from '../runner/workspaces.ts'
 import { lerConversa, listarConversas } from './mensagens.ts'
 
 function raizApp(): string {
@@ -35,11 +35,7 @@ function projeto(p: string): string {
   return achado.caminho
 }
 
-function dossieDe(d: string): string {
-  const dossie = decodeURIComponent(d)
-  if (!/^[^/.][^/]*\/[^/.][^/]*$/.test(dossie)) throw new ErroRunner(`dossiê inválido: ${dossie}`)
-  return dossie
-}
+const dossieDe = (d: string) => validarDossie(decodeURIComponent(d))
 
 function totalCenarios(ws: string, dossie: string): number {
   try {
@@ -49,13 +45,16 @@ function totalCenarios(ws: string, dossie: string): number {
   }
 }
 
-function rodadaCompleta(ws: string, id: number): Rodada & { execucoes: Execucao[] } {
-  const repo = repositorio(ws)
-  const base = repo.db.prepare('select dossie from rodadas where id = ?').get(id) as { dossie: string } | undefined
-  if (!base) throw new ErroRunner(`rodada #${id} não existe`, 404)
-  const rodada = repo.rodada(id, totalCenarios(ws, base.dossie))!
-  return { ...rodada, execucoes: repo.execucoesDaRodada(id).map(semMd) }
+function rodada(ws: string, id: number): Rodada {
+  const local = repositorio(ws).localDaRodada(id)
+  if (!local) throw new ErroRunner(`rodada #${id} não existe`, 404)
+  return repositorio(ws).rodada(id, totalCenarios(ws, local.dossie))!
 }
+
+const rodadaCompleta = (ws: string, id: number): Rodada & { execucoes: Execucao[] } => ({
+  ...rodada(ws, id),
+  execucoes: repositorio(ws).execucoesDaRodada(id).map(semMd),
+})
 
 const app = Fastify({ logger: { level: process.env.LOG ?? 'warn' } })
 
@@ -79,18 +78,16 @@ app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/mensagens/:d', a
   lerConversa(projeto(req.params.p), dossieDe(req.params.d)),
 )
 
-app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/demandas/:d', async (req) => {
+app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/demandas/:d', async (req): Promise<DemandaDetalhe> => {
   const ws = projeto(req.params.p)
   const dossie = dossieDe(req.params.d)
   const { trechos: _, ...suite } = lerSuite(ws, dossie)
+  const estados = repositorio(ws).estados(dossie, idsCenarios(suite))
   return {
-    demanda: demanda(ws, dossie, { ...suite, trechos: {} }),
+    demanda: demanda(ws, dossie, suite, estados[0]),
     suite,
     rodadas: repositorio(ws).rodadas(dossie, suite.cenarios.length),
-    estados: repositorio(ws).estados(
-      dossie,
-      suite.cenarios.map((c) => c.id),
-    ),
+    estados,
   }
 })
 
@@ -100,17 +97,14 @@ app.get<{ Params: { p: string; d: string }; Querystring: { ambiente?: string } }
     const ws = projeto(req.params.p)
     const dossie = dossieDe(req.params.d)
     const suite = lerSuite(ws, dossie)
-    const repo = repositorio(ws)
-    const rodadas = repo.rodadas(dossie, suite.cenarios.length, req.query.ambiente || undefined).reverse()
-    const linhas: Matriz['linhas'] = suite.cenarios.map((c) => ({ cenario: c.id, titulo: c.titulo, vereditos: {} }))
-    for (const r of rodadas) {
-      for (const e of repo.execucoesDaRodada(r.id)) {
-        let linha = linhas.find((l) => l.cenario === e.cenario)
-        if (!linha) linhas.push((linha = { cenario: e.cenario, titulo: e.titulo, vereditos: {} }))
-        linha.vereditos[r.id] = e.veredito
-      }
+    const ambiente = req.query.ambiente || undefined
+    const linhas = new Map<string, Matriz['linhas'][number]>(suite.cenarios.map((c) => [c.id, { cenario: c.id, titulo: c.titulo, vereditos: {} }]))
+    for (const e of repositorio(ws).vereditos(dossie, ambiente)) {
+      let linha = linhas.get(e.cenario)
+      if (!linha) linhas.set(e.cenario, (linha = { cenario: e.cenario, titulo: e.titulo, vereditos: {} }))
+      linha.vereditos[e.rodada_id] = e.veredito
     }
-    return { rodadas, linhas }
+    return { rodadas: repositorio(ws).rodadas(dossie, suite.cenarios.length, ambiente).reverse(), linhas: [...linhas.values()] }
   },
 )
 
@@ -118,12 +112,12 @@ app.get<{ Params: { p: string; d: string; c: string } }>('/api/projetos/:p/deman
   const ws = projeto(req.params.p)
   const dossie = dossieDe(req.params.d)
   const repo = repositorio(ws)
-  const total = totalCenarios(ws, dossie)
-  const cache = new Map<number, Rodada>()
-  return repo.historico(dossie, req.params.c.toUpperCase()).map((e) => {
-    if (!cache.has(e.rodada_id)) cache.set(e.rodada_id, repo.rodada(e.rodada_id, total)!)
-    return { ...semMd(e), rodada: cache.get(e.rodada_id) }
-  })
+  const execucoes = repo.historico(dossie, req.params.c.toUpperCase())
+  const rodadas = repo.rodadasPorId(
+    execucoes.map((e) => e.rodada_id),
+    totalCenarios(ws, dossie),
+  )
+  return execucoes.map((e) => ({ ...semMd(e), rodada: rodadas.get(e.rodada_id) }))
 })
 
 app.post<{ Params: { p: string; d: string }; Body: { ambiente?: string; cenarios?: string[] } }>(
@@ -151,7 +145,7 @@ app.post<{ Params: { p: string; d: string }; Body: { ambiente?: string; cenarios
     r.fim
       .catch((e) => {
         app.log.error(e)
-        emissor.emit('fim', repositorio(ws).rodada(r.rodada_id, totalCenarios(ws, dossie)))
+        emissor.emit('fim', rodada(ws, r.rodada_id))
       })
       .finally(() => setTimeout(() => ativas.delete(chave), 1000))
     return { rodada_id: r.rodada_id }
@@ -165,7 +159,7 @@ app.get<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id', a
 app.get<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id/eventos', (req, reply) => {
   const ws = projeto(req.params.p)
   const id = Number(req.params.id)
-  const atual = rodadaCompleta(ws, id)
+  const { execucoes, ...atual } = rodadaCompleta(ws, id)
   reply.hijack()
   const res = reply.raw
   res.writeHead(200, {
@@ -175,15 +169,14 @@ app.get<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id/eve
     'x-accel-buffering': 'no',
   })
   const enviarEvento = (evento: string, dados: unknown) => res.write(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`)
-  const { execucoes, ...rodada } = atual
   const enviados = new Set<number>()
   for (const e of execucoes) {
     enviados.add(e.id)
     enviarEvento('execucao', e)
   }
   const ativa = ativas.get(`${req.params.p}:${id}`)
-  if (!ativa || rodada.status !== 'executando') {
-    enviarEvento('fim', rodada)
+  if (!ativa || atual.status !== 'executando') {
+    enviarEvento('fim', atual)
     res.end()
     return
   }
@@ -209,16 +202,15 @@ app.get<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id/eve
 app.post<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id/parar', async (req) => {
   const ws = projeto(req.params.p)
   const id = Number(req.params.id)
-  const atual = rodadaCompleta(ws, id)
+  const atual = rodada(ws, id)
   const ativa = ativas.get(`${req.params.p}:${id}`)
   if (ativa) {
     ativa.ctrl.abort()
-    const fim = await new Promise<Rodada>((ok) => ativa.emissor.once('fim', ok))
-    return fim
+    return new Promise<Rodada>((ok) => ativa.emissor.once('fim', ok))
   }
-  if (atual.status === 'executando') repositorio(ws).finalizarRodada(id, 'interrompida')
-  const { execucoes: _, ...rodada } = rodadaCompleta(ws, id)
-  return rodada
+  if (atual.status !== 'executando') return atual
+  repositorio(ws).finalizarRodada(id, 'interrompida')
+  return rodada(ws, id)
 })
 
 app.patch<{ Params: { p: string; id: string }; Body: { veredito?: string; nota?: string | null } }>(
@@ -244,14 +236,21 @@ app.post<{
   })
 })
 
-if (existsSync(WEB)) {
-  await app.register(fastifyStatic, { root: WEB, wildcard: false })
+const temFront = existsSync(join(WEB, 'index.html'))
+
+if (temFront) {
+  // Assets têm hash no nome e nunca mudam; o index.html é revalidado para pegar o build novo.
+  await app.register(fastifyStatic, {
+    root: WEB,
+    wildcard: false,
+    preCompressed: true,
+    setHeaders: (reply, caminho) =>
+      reply.header('cache-control', caminho.startsWith(join(WEB, 'assets')) ? 'public, max-age=31536000, immutable' : 'no-cache'),
+  })
 }
 
 app.setNotFoundHandler((req, reply) => {
-  if (req.method === 'GET' && !req.url.startsWith('/api') && existsSync(join(WEB, 'index.html'))) {
-    return reply.sendFile('index.html')
-  }
+  if (req.method === 'GET' && !req.url.startsWith('/api') && temFront) return reply.sendFile('index.html')
   reply.status(404).send({ erro: `rota não encontrada: ${req.method} ${req.url}` })
 })
 

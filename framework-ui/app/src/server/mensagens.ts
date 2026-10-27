@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ConversaMc, ConversaMcDetalhe, EnvelopeMc, MensagemMc } from '../shared/tipos.ts'
+import { lerCacheado } from '../runner/arquivos.ts'
 import { ErroRunner } from '../runner/erros.ts'
 import { pastaDossie } from '../runner/workspaces.ts'
 
@@ -47,10 +48,8 @@ function aguardando(mensagens: MensagemMc[]): number {
   ).length
 }
 
-export function lerConversa(ws: string, dossie: string): ConversaMcDetalhe {
-  const arq = join(pastaDossie(ws, dossie), ARQUIVO)
-  if (!existsSync(arq)) throw new ErroRunner(`${ARQUIVO} não encontrado em doc/demandas/${dossie}`, 404)
-  const { item, mensagens } = parsearMensagens(readFileSync(arq, 'utf8'))
+function conversa(dossie: string, md: string): ConversaMcDetalhe {
+  const { item, mensagens } = parsearMensagens(md)
   const [tipo, slug] = dossie.split('/')
   const criada = mensagens.find((m) => m.tipo === 'item.created')
   return {
@@ -64,6 +63,13 @@ export function lerConversa(ws: string, dossie: string): ConversaMcDetalhe {
     ultima_em: mensagens.at(-1)?.registrada_em ?? null,
     mensagens,
   }
+}
+
+// A ponte reescreve o arquivo a cada mensagem e o painel consulta por polling: o parse só roda quando o arquivo muda.
+export function lerConversa(ws: string, dossie: string): ConversaMcDetalhe {
+  const arq = join(pastaDossie(ws, dossie), ARQUIVO)
+  if (!existsSync(arq)) throw new ErroRunner(`${ARQUIVO} não encontrado em doc/demandas/${dossie}`, 404)
+  return lerCacheado(arq, (md) => conversa(dossie, md))
 }
 
 export function listarConversas(ws: string): ConversaMc[] {

@@ -32,4 +32,9 @@ export const migracoes: { versao: number; sql: string }[] = [
       create index execucoes_rodada on execucoes(rodada_id, ordem);
     `,
   },
+  {
+    // Cobre placar, estado atual e histórico sem ler a linha inteira: veredito e executada_em vêm depois dos JSON grandes.
+    versao: 2,
+    sql: 'create index execucoes_cenario on execucoes(rodada_id, cenario, executada_em, veredito);',
+  },
 ]

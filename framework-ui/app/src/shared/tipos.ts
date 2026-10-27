@@ -73,12 +73,17 @@ export type Execucao = {
   rodada?: Rodada
 }
 
+// O que as listas de cenários mostram de uma execução, sem request, corpo nem asserções.
+export type ExecucaoResumo = Pick<Execucao, 'id' | 'rodada_id' | 'cenario' | 'titulo' | 'ordem' | 'veredito' | 'executada_em' | 'rodada'> & {
+  resposta: Pick<Resposta, 'status' | 'tempo_ms'> | null
+}
+
 // Última execução de cada cenário num ambiente, juntando rodadas parciais.
 export type EstadoAtual = {
   ambiente: string
   atualizado_em: string
   placar: Placar
-  execucoes: Execucao[]
+  execucoes: ExecucaoResumo[]
 }
 
 export type Info = { usuario: string; versao: string }

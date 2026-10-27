@@ -15,7 +15,7 @@ Ferramenta visual do harness. Primeiro módulo: Testes. Próximo: Logs. Um usuá
 |---|---|---|
 | Projeto | uma cópia do framework (workspace) | pasta montada em `/workspaces/<nome>` |
 | Demanda | dossiê com `plano-teste.md` | `doc/demandas/<tipo>/<slug>/` |
-| Suíte | os cenários `T1..Tn` do `plano-teste.md` | MD, lido a cada requisição |
+| Suíte | os cenários `T1..Tn` do `plano-teste.md` | MD, relido quando o arquivo muda (mtime e tamanho) |
 | Rodada | uma execução de parte ou de toda a suíte num ambiente | SQLite |
 | Execução | um cenário dentro de uma rodada | SQLite |
 
@@ -189,6 +189,8 @@ type Rodada = { id: number; dossie: string; ambiente: string; origem: 'agent' | 
 type Cenario = { id: string; titulo: string; precondicao?: string; objetivo?: string; env: Record<string, string>; request: { raw: string; method: string; url: string; headers: [string, string][]; body: string }; assercoes: string[]; erros: string[] }
 type Assercao = { texto: string; tipo: 'auto' | 'manual'; ok: boolean | null; obtido?: unknown }
 type Execucao = { id: number; rodada_id: number; cenario: string; titulo: string; ordem: number; request: { method: string; url: string; headers: [string, string][]; body: string }; resposta: { status: number; headers: [string, string][]; body: string; tempo_ms: number; tamanho: number } | null; erro: string | null; assercoes: Assercao[]; veredito: Veredito; veredito_auto: Veredito; nota: string | null; executada_em: string; rodada?: Rodada }
+type ExecucaoResumo = Pick<Execucao, 'id' | 'rodada_id' | 'cenario' | 'titulo' | 'ordem' | 'veredito' | 'executada_em' | 'rodada'> & { resposta: { status: number; tempo_ms: number } | null }
+type EstadoAtual = { ambiente: string; atualizado_em: string; placar: Placar; execucoes: ExecucaoResumo[] }
 ```
 
 ## Telas

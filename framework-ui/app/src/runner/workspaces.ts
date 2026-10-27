@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
-import type { Demanda, Projeto } from '../shared/tipos.ts'
+import type { Demanda, EstadoAtual, Projeto, Suite } from '../shared/tipos.ts'
+import { lerCacheado } from './arquivos.ts'
 import { repositorio } from './banco.ts'
 import { ErroRunner } from './erros.ts'
 import { parsearPlano, type SuiteLida } from './parser.ts'
@@ -50,12 +51,19 @@ export function pastaDossie(ws: string, dossie: string): string {
   return join(ws, 'doc', 'demandas', dossie)
 }
 
-export function lerSuite(ws: string, dossie: string): SuiteLida {
+// `<tipo>/<slug>`, sem `..` nem caminho absoluto.
+export function validarDossie(dossie: string): string {
   if (!/^[^/.][^/]*\/[^/.][^/]*$/.test(dossie)) throw new ErroRunner(`dossiê inválido: ${dossie}`)
-  const arq = join(pastaDossie(ws, dossie), 'plano-teste.md')
-  if (!existsSync(arq)) throw new ErroRunner(`plano-teste.md não encontrado em doc/demandas/${dossie}`, 404)
-  return parsearPlano(readFileSync(arq, 'utf8'))
+  return dossie
 }
+
+export function lerSuite(ws: string, dossie: string): SuiteLida {
+  const arq = join(pastaDossie(ws, validarDossie(dossie)), 'plano-teste.md')
+  if (!existsSync(arq)) throw new ErroRunner(`plano-teste.md não encontrado em doc/demandas/${dossie}`, 404)
+  return lerCacheado(arq, parsearPlano)
+}
+
+export const idsCenarios = (suite: Suite) => suite.cenarios.map((c) => c.id)
 
 type LinhaIndex = { data?: string; servicos?: string; status?: string; origem?: string }
 
@@ -63,11 +71,14 @@ function celulas(linha: string): string[] {
   return linha.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim())
 }
 
-export function lerIndexTipo(ws: string, tipo: string): Map<string, LinhaIndex> {
-  const r = new Map<string, LinhaIndex>()
+function lerIndexTipo(ws: string, tipo: string): Map<string, LinhaIndex> {
   const arq = join(ws, 'doc', 'demandas', tipo, 'INDEX.md')
-  if (!existsSync(arq)) return r
-  const linhas = readFileSync(arq, 'utf8').split('\n')
+  return existsSync(arq) ? lerCacheado(arq, parsearIndex) : new Map()
+}
+
+function parsearIndex(texto: string): Map<string, LinhaIndex> {
+  const r = new Map<string, LinhaIndex>()
+  const linhas = texto.split('\n')
   for (let i = 0; i < linhas.length - 1; i++) {
     if (!linhas[i].trim().startsWith('|') || !/^\s*\|[\s:|-]+\|\s*$/.test(linhas[i + 1])) continue
     const cab = celulas(linhas[i]).map((c) => c.toLowerCase())
@@ -93,42 +104,39 @@ export function lerIndexTipo(ws: string, tipo: string): Map<string, LinhaIndex> 
   return r
 }
 
-export function demanda(ws: string, dossie: string, suite?: SuiteLida, index?: Map<string, LinhaIndex>): Demanda {
+// `estado` \u00e9 o do ambiente mais recente, j\u00e1 calculado por quem chama.
+export function demanda(ws: string, dossie: string, suite: Suite, estado: EstadoAtual | undefined): Demanda {
   const [tipo, slug] = dossie.split('/')
-  const s = suite ?? lerSuite(ws, dossie)
-  const linha = (index ?? lerIndexTipo(ws, tipo)).get(slug) ?? {}
-  const total = s.cenarios.length
-  const repo = repositorio(ws)
-  const ids = s.cenarios.map((c) => c.id)
-  const [ambiente] = repo.ambientesComExecucao(dossie)
-  const estado = ambiente ? repo.estadoAtual(dossie, ambiente, ids) : null
+  const linha = lerIndexTipo(ws, tipo).get(slug) ?? {}
+  const total = suite.cenarios.length
   const origem = linha.origem && !/^(nenhum|-|\u2014)?$/i.test(linha.origem) ? linha.origem : null
   return {
     dossie,
     tipo,
     slug,
-    titulo: s.titulo || slug,
+    titulo: suite.titulo || slug,
     data: linha.data || /^\d{4}-\d{2}-\d{2}/.exec(slug)?.[0] || '',
     servicos: linha.servicos ?? '',
     status: linha.status ?? '',
     origem,
     total_cenarios: total,
-    ultima_rodada: repo.ultimaRodada(dossie, total),
-    estado_atual: estado && { ambiente: estado.ambiente, atualizado_em: estado.atualizado_em, placar: estado.placar },
+    ultima_rodada: repositorio(ws).ultimaRodada(dossie, total),
+    estado_atual: estado ? { ambiente: estado.ambiente, atualizado_em: estado.atualizado_em, placar: estado.placar } : null,
   }
 }
 
 export function listarDemandas(ws: string): Demanda[] {
   const base = join(ws, 'doc', 'demandas')
+  const repo = repositorio(ws)
   const r: Demanda[] = []
   for (const tipo of readdirSync(base)) {
     const dirTipo = join(base, tipo)
     if (tipo.startsWith('.') || !statSync(dirTipo).isDirectory()) continue
-    const index = lerIndexTipo(ws, tipo)
     for (const slug of readdirSync(dirTipo)) {
       if (!existsSync(join(dirTipo, slug, 'plano-teste.md'))) continue
       const dossie = `${tipo}/${slug}`
-      r.push(demanda(ws, dossie, lerSuite(ws, dossie), index))
+      const suite = lerSuite(ws, dossie)
+      r.push(demanda(ws, dossie, suite, repo.estados(dossie, idsCenarios(suite))[0]))
     }
   }
   return r.sort((a, b) => b.data.localeCompare(a.data) || a.dossie.localeCompare(b.dossie))
