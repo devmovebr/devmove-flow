@@ -1,6 +1,6 @@
 # DevMove Painel: especificação
 
-Ferramenta visual do harness. Primeiro módulo: Testes. Próximo: Logs. Um usuário, sem login.
+Ferramenta visual do harness. Módulos: Testes, Mensagens (troca com o Mission Control, de `<dossiê>/mensagens-mc.md`) e Logs de agentes (sessões da ponte, de `<workspace>/.agents-bridge/data/logs/<ITEM>.jsonl`, desenhadas como o terminal do Claude Code e acompanhadas por SSE). Um usuário, sem login.
 
 ## Stack
 
@@ -197,7 +197,7 @@ type EstadoAtual = { ambiente: string; atualizado_em: string; placar: Placar; ex
 
 Referências em `framework-ui/referencias/`. Seguir à risca: tema escuro, fundo quase preto, cards com borda fina, acento rosa/magenta, tipografia Poppins, badges de status verde/vermelho/laranja, contadores com ícone circular, donut de %.
 
-Shell (todas as referências): sidebar com logo, seletor de projeto, menu `Testes` (ativo) e `Logs` (desabilitado, "em breve"). Topo com breadcrumb `Projeto > Testes > <tela>` e título "Testes". Rótulos em português.
+Shell (todas as referências): sidebar com logo, seletor de projeto, menu `Testes`, `Mensagens` e `Logs de agentes`. Topo com breadcrumb `Projeto > Testes > <tela>` e título "Testes". Rótulos em português.
 
 | Rota | Referência | Conteúdo |
 |---|---|---|

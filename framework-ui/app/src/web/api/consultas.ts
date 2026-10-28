@@ -11,6 +11,7 @@ import type {
   Projeto,
   Requisicao,
   Rodada,
+  SessaoAgente,
   Veredito,
 } from '../../shared/tipos'
 import { api, rotasApi } from './cliente'
@@ -27,6 +28,7 @@ export const chaves = {
   rodada: (p: string, id: number) => ['rodada', p, id] as const,
   conversas: (p: string) => ['conversas', p] as const,
   conversa: (p: string, d: string) => ['conversa', p, d] as const,
+  sessoes: (p: string) => ['sessoes', p] as const,
 }
 
 // Leituras do projeto que mudam quando uma execução é gravada ou tem o veredito trocado.
@@ -52,6 +54,16 @@ export function useConversa(p: string, d: string) {
     queryFn: () => api<ConversaMcDetalhe>(rotasApi.conversa(p, d)),
     refetchInterval: AO_VIVO,
     enabled: !!d,
+  })
+}
+
+// Sessões de agente da ponte: o arquivo de cada uma cresce enquanto o agente roda.
+export function useSessoes(p: string) {
+  return useQuery({
+    queryKey: chaves.sessoes(p),
+    queryFn: () => api<SessaoAgente[]>(rotasApi.sessoes(p)),
+    refetchInterval: AO_VIVO,
+    enabled: !!p,
   })
 }
 

@@ -155,3 +155,39 @@ export type ConversaMc = {
 }
 
 export type ConversaMcDetalhe = ConversaMc & { mensagens: MensagemMc[] }
+
+// Sessão de agente conduzida pela ponte: `<workspace>/.agents-bridge/data/logs/<ITEM>.jsonl`, um evento por linha.
+export type LinhaDiff = { op: '+' | '-' | ' ' | 'gap'; n: number | null; text: string }
+
+export type EventoSessao = {
+  at: string
+  item: string
+  kind: 'prompt' | 'text' | 'tool' | 'result' | 'agent' | 'question' | 'answer' | 'turn' | 'info' | 'error'
+  agent?: string | null
+  id?: string
+  name?: string
+  detail?: string
+  text?: string
+  error?: boolean
+  summary?: string
+  output?: string[]
+  diff?: LinhaDiff[]
+  status?: string
+  verdict?: string
+  seconds?: number
+  cost?: number
+}
+
+export type SituacaoSessao = 'executando' | 'aguardando' | 'parada'
+
+export type SessaoAgente = {
+  item: string
+  titulo: string | null
+  dossie: string | null
+  situacao: SituacaoSessao
+  perguntas_abertas: number
+  rodadas: number
+  custo: number
+  eventos: number
+  atualizada_em: string
+}

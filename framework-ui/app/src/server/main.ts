@@ -2,12 +2,13 @@ import { EventEmitter } from 'node:events'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import fastifyStatic from '@fastify/static'
-import Fastify, { type FastifyError } from 'fastify'
+import Fastify, { type FastifyError, type FastifyReply } from 'fastify'
 import type { DemandaDetalhe, Execucao, Info, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
 import { repositorio, semMd } from '../runner/banco.ts'
 import { ErroRunner, envioAvulso, iniciarRodada, mudarVeredito } from '../runner/executor.ts'
 import { listarAmbientes } from '../runner/variaveis.ts'
 import { demanda, idsCenarios, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos, validarDossie } from '../runner/workspaces.ts'
+import { arquivoSessao, lerDesde, listarSessoes } from './logs.ts'
 import { lerConversa, listarConversas } from './mensagens.ts'
 
 function raizApp(): string {
@@ -56,6 +57,17 @@ const rodadaCompleta = (ws: string, id: number): Rodada & { execucoes: Execucao[
   execucoes: repositorio(ws).execucoesDaRodada(id).map(semMd),
 })
 
+function abrirSse(reply: FastifyReply): (evento: string, dados: unknown) => void {
+  reply.hijack()
+  reply.raw.writeHead(200, {
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-cache',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no',
+  })
+  return (evento, dados) => reply.raw.write(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`)
+}
+
 const app = Fastify({ logger: { level: process.env.LOG ?? 'warn' } })
 
 app.setErrorHandler((err: FastifyError | ErroRunner, _req, reply) => {
@@ -77,6 +89,34 @@ app.get<{ Params: { p: string } }>('/api/projetos/:p/mensagens', async (req) => 
 app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/mensagens/:d', async (req) =>
   lerConversa(projeto(req.params.p), dossieDe(req.params.d)),
 )
+
+app.get<{ Params: { p: string } }>('/api/projetos/:p/logs', async (req) => listarSessoes(projeto(req.params.p)))
+
+// A ponte só acrescenta linhas; o painel relê o trecho novo a cada segundo. Polling no lugar de fs.watch,
+// que não dispara em volume montado no Docker.
+app.get<{ Params: { p: string; item: string } }>('/api/projetos/:p/logs/:item/eventos', (req, reply) => {
+  const arq = arquivoSessao(projeto(req.params.p), req.params.item)
+  const enviar = abrirSse(reply)
+  let lido = lerDesde(arq, 0)
+  enviar('inicio', lido.eventos)
+  const ler = () => {
+    if (!existsSync(arq)) return
+    const novo = lerDesde(arq, lido.ate)
+    if (novo.ate < 0) {
+      lido = lerDesde(arq, 0)
+      enviar('inicio', lido.eventos)
+    } else if (novo.eventos.length || novo.ate !== lido.ate) {
+      lido = novo
+      if (novo.eventos.length) enviar('eventos', novo.eventos)
+    }
+  }
+  const leitura = setInterval(ler, 1_000)
+  const pulso = setInterval(() => reply.raw.write(': pulso\n\n'), 15_000)
+  req.raw.on('close', () => {
+    clearInterval(leitura)
+    clearInterval(pulso)
+  })
+})
 
 app.get<{ Params: { p: string; d: string } }>('/api/projetos/:p/demandas/:d', async (req): Promise<DemandaDetalhe> => {
   const ws = projeto(req.params.p)
@@ -160,15 +200,8 @@ app.get<{ Params: { p: string; id: string } }>('/api/projetos/:p/rodadas/:id/eve
   const ws = projeto(req.params.p)
   const id = Number(req.params.id)
   const { execucoes, ...atual } = rodadaCompleta(ws, id)
-  reply.hijack()
   const res = reply.raw
-  res.writeHead(200, {
-    'content-type': 'text/event-stream; charset=utf-8',
-    'cache-control': 'no-cache',
-    connection: 'keep-alive',
-    'x-accel-buffering': 'no',
-  })
-  const enviarEvento = (evento: string, dados: unknown) => res.write(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`)
+  const enviarEvento = abrirSse(reply)
   const enviados = new Set<number>()
   for (const e of execucoes) {
     enviados.add(e.id)

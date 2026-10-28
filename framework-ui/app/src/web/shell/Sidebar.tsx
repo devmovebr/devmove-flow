@@ -1,6 +1,6 @@
-import { ChevronsUpDown, FlaskConical, MessagesSquare, ScrollText } from 'lucide-react'
+import { ChevronsUpDown, FlaskConical, MessagesSquare, SquareTerminal } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
-import { useConversas, useInfo, useProjetos } from '../api/consultas'
+import { useConversas, useInfo, useProjetos, useSessoes } from '../api/consultas'
 import { Avatar } from '../ui/Avatar'
 import { caminhos, useRota } from '../util/caminhos'
 
@@ -47,6 +47,8 @@ export function Sidebar() {
   const usuario = info?.usuario ?? ''
   const { data: conversas = [] } = useConversas(p)
   const aguardando = conversas.reduce((n, c) => n + c.aguardando, 0)
+  const { data: sessoes = [] } = useSessoes(p)
+  const executando = sessoes.filter((s) => s.situacao === 'executando').length
   return (
     <aside className="flex w-[216px] shrink-0 flex-col border-r border-borda bg-fundo">
       <div className="flex h-11 items-center gap-2 px-4">
@@ -78,11 +80,19 @@ export function Sidebar() {
             </span>
           )}
         </NavLink>
-        <span aria-disabled className="flex h-8 cursor-not-allowed items-center gap-2.5 rounded-md px-2 text-[12px] text-texto-3">
-          <ScrollText size={14} />
-          Logs
-          <span className="ml-auto rounded-full bg-superficie-2 px-1.5 py-px text-[9px] font-medium text-texto-3">em breve</span>
-        </span>
+        <NavLink to={caminhos.logs(p)} className={classeItem}>
+          <SquareTerminal size={14} />
+          Logs de agentes
+          {executando > 0 && (
+            <span
+              title={`${executando} sessão(ões) executando agora`}
+              className="ml-auto flex items-center gap-1 rounded-full bg-acento-suave px-1.5 py-px text-[10px] font-medium text-acento-forte tabular-nums"
+            >
+              <span className="size-1.5 animate-pulse rounded-full bg-acento-forte" />
+              {executando}
+            </span>
+          )}
+        </NavLink>
       </nav>
 
       <div className="mt-auto flex items-center gap-2.5 border-t border-borda px-4 py-3">

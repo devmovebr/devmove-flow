@@ -25,6 +25,10 @@ export function tamanho(bytes: number): string {
   return `${(bytes / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} KB`
 }
 
+export const custo = (usd: number) => `US$ ${usd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+export const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+
 export function slugCurto(slug: string): string {
   return slug.replace(/^\d{4}-\d{2}-\d{2}-/, '')
 }

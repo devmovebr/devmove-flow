@@ -46,4 +46,6 @@ export const rotasApi = {
   enviar: (p: string) => `${proj(p)}/enviar`,
   conversas: (p: string) => `${proj(p)}/mensagens`,
   conversa: (p: string, d: string) => `${proj(p)}/mensagens/${cod(d)}`,
+  sessoes: (p: string) => `${proj(p)}/logs`,
+  eventosSessao: (p: string, item: string) => `/api${proj(p)}/logs/${cod(item)}/eventos`,
 }

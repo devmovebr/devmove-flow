@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
-import type { Execucao, Rodada } from '../../shared/tipos'
+import { useEffect, useRef, useState } from 'react'
+import type { EventoSessao, Execucao, Rodada } from '../../shared/tipos'
 import { rotasApi } from './cliente'
 import { chaves, invalidarResultados, type RodadaDetalhe } from './consultas'
 
@@ -39,4 +39,23 @@ export function useEventosRodada(p: string, id: number | null, ativo: boolean, o
 
     return () => fonte.close()
   }, [p, id, ativo, cliente])
+}
+
+// Eventos da sessão de agente por SSE: `inicio` traz o arquivo inteiro (de novo, se a ponte o recriou),
+// `eventos` só as linhas novas. O estado guarda de qual sessão é, para a troca de aba não mostrar a anterior.
+export function useEventosSessao(p: string, item: string): { eventos: EventoSessao[]; conectado: boolean } {
+  const sessao = `${p}/${item}`
+  const [estado, setEstado] = useState({ sessao, eventos: [] as EventoSessao[], conectado: false })
+
+  useEffect(() => {
+    if (!item) return
+    const fonte = new EventSource(rotasApi.eventosSessao(p, item))
+    const ler = (ev: Event) => JSON.parse((ev as MessageEvent<string>).data) as EventoSessao[]
+    fonte.addEventListener('inicio', (ev) => setEstado({ sessao, eventos: ler(ev), conectado: true }))
+    fonte.addEventListener('eventos', (ev) => setEstado((atual) => ({ ...atual, eventos: [...atual.eventos, ...ler(ev)], conectado: true })))
+    fonte.onerror = () => setEstado((atual) => ({ ...atual, conectado: false }))
+    return () => fonte.close()
+  }, [p, item, sessao])
+
+  return estado.sessao === sessao ? estado : { eventos: [], conectado: false }
 }

@@ -25,6 +25,23 @@
   --color-pendente: #e8963a;
   --color-bloqueado: #8b8590;
   --color-info: #7c8cf0;
+
+  /* Terminal dos logs de agente: paleta escura do Claude Code */
+  --color-term-fundo: #151515;
+  --color-term-borda: #3a3a3a;
+  --color-term-texto: #e6e6e6;
+  --color-term-dim: #999999;
+  --color-term-apagado: #666666;
+  --color-term-claude: #d77757;
+  --color-term-ok: #4eba65;
+  --color-term-erro: #ff6b80;
+  --color-term-ambar: #ffc107;
+  --color-term-azul: #4d8ff7;
+  --color-term-agua: #4ec9b0;
+  --color-term-codigo: #b1b9f9;
+  --color-term-entrada: #373737;
+  --color-term-mais: #225c2b;
+  --color-term-menos: #7a2936;
 }
 
 html,
@@ -151,4 +168,69 @@ body {
 }
 .md hr {
   border-color: var(--color-borda);
+}
+
+.term {
+  font-family: 'JetBrains Mono', var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-term-texto);
+}
+.term .md {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+.term .md > * + * {
+  margin-top: 0.9em;
+}
+.term .md h1,
+.term .md h2,
+.term .md h3,
+.term .md h4 {
+  font-size: inherit;
+  font-weight: 700;
+}
+.term .md strong {
+  font-weight: 700;
+}
+.term .md code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  color: var(--color-term-codigo);
+}
+.term .md pre {
+  background: none;
+  border: 0;
+  padding: 0 0 0 2ch;
+}
+.term .md ul,
+.term .md ol {
+  padding-left: 2ch;
+}
+.term .md li::marker,
+.term .md a {
+  color: var(--color-term-dim);
+}
+.term .md blockquote {
+  border-color: var(--color-term-apagado);
+  color: var(--color-term-dim);
+  font-style: italic;
+}
+.term .md table {
+  font-size: inherit;
+}
+.term .md th,
+.term .md td {
+  border-color: var(--color-term-borda);
+}
+.term .md th {
+  background: none;
+  font-weight: 700;
+}
+.term-bloco {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
 }
