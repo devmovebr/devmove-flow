@@ -15,30 +15,25 @@ export function Conversa() {
   const { p, d, slug } = useRota()
   const { data, isPending, error, dataUpdatedAt } = useConversa(p, d)
   const [filtro, setFiltro] = useState<Filtro>('todas')
-  const [destacado, setDestacado] = useState<number | null>(null)
   const rolagem = useRef<HTMLDivElement>(null)
   const noFim = useRef(true)
 
+  // Resposta com pergunta conhecida sai da timeline e vai para baixo dela; resposta órfã fica no lugar.
   const itens = useMemo(() => {
     const lista = (data?.mensagens ?? []).map((mensagem, indice): Vinculo => ({ indice, mensagem, visao: humanizar(mensagem) }))
-    const perguntas = new Map<string, Vinculo>()
+    const perguntas = new Set(lista.filter((v) => v.mensagem.tipo === 'question.created').map((v) => v.visao.questionId))
     const respostas = new Map<string, Vinculo>()
     for (const v of lista) {
-      if (!v.visao.questionId) continue
-      if (v.mensagem.tipo === 'question.created') perguntas.set(v.visao.questionId, v)
-      if (v.mensagem.tipo === 'answer.accepted' && !respostas.has(v.visao.questionId)) respostas.set(v.visao.questionId, v)
+      const id = v.visao.questionId
+      if (v.mensagem.tipo === 'answer.accepted' && id && perguntas.has(id) && !respostas.has(id)) respostas.set(id, v)
     }
-    return lista.map((v) => {
-      const id = v.visao.questionId ?? ''
-      return {
-        ...v,
-        pergunta: v.mensagem.tipo === 'answer.accepted' ? (perguntas.get(id) ?? null) : null,
-        resposta: v.mensagem.tipo === 'question.created' ? (respostas.get(id) ?? null) : null,
-      }
-    })
+    const aninhadas = new Set(respostas.values())
+    return lista
+      .filter((v) => !aninhadas.has(v))
+      .map((v) => ({ ...v, resposta: v.mensagem.tipo === 'question.created' ? (respostas.get(v.visao.questionId ?? '') ?? null) : null }))
   }, [data])
 
-  const total = itens.length
+  const total = data?.mensagens.length ?? 0
   // Mensagem nova rola a timeline só para quem já estava no fim; quem subiu para ler não perde o lugar.
   useEffect(() => {
     const el = rolagem.current
@@ -48,13 +43,6 @@ export function Conversa() {
   const perguntas = itens.filter((i) => i.mensagem.tipo === 'question.created')
   const aguardando = perguntas.filter((i) => !i.resposta)
   const visiveis = filtro === 'perguntas' ? perguntas : filtro === 'aguardando' ? aguardando : itens
-
-  const irPara = (indice: number) => {
-    setFiltro('todas')
-    requestAnimationFrame(() => document.getElementById(`msg-${indice}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-    setDestacado(indice)
-    setTimeout(() => setDestacado((atual) => (atual === indice ? null : atual)), 1600)
-  }
 
   return (
     <>
@@ -85,7 +73,7 @@ export function Conversa() {
               valor={filtro}
               aoMudar={setFiltro}
               opcoes={[
-                { valor: 'todas', rotulo: 'Todas', contagem: itens.length },
+                { valor: 'todas', rotulo: 'Todas', contagem: total },
                 { valor: 'perguntas', rotulo: 'Perguntas', contagem: perguntas.length },
                 { valor: 'aguardando', rotulo: 'Aguardando resposta', contagem: aguardando.length },
               ]}
@@ -104,17 +92,7 @@ export function Conversa() {
             ) : (
               <ol className="mx-auto max-w-[920px] px-6 pt-5 pb-8">
                 {visiveis.map((i, n) => (
-                  <CartaoMensagem
-                    key={`${i.indice}-${i.mensagem.registrada_em}`}
-                    mensagem={i.mensagem}
-                    visao={i.visao}
-                    indice={i.indice}
-                    ultimo={n === visiveis.length - 1}
-                    pergunta={i.pergunta}
-                    resposta={i.resposta}
-                    destacado={destacado === i.indice}
-                    aoIr={irPara}
-                  />
+                  <CartaoMensagem key={`${i.indice}-${i.mensagem.registrada_em}`} {...i} ultimo={n === visiveis.length - 1} />
                 ))}
               </ol>
             )}

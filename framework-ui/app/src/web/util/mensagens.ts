@@ -85,7 +85,11 @@ export function direcao(m: MensagemMc): string {
   return m.direcao === 'recebida' ? 'MC → harness' : 'harness → MC'
 }
 
-export function trecho(md: string | null, max = 90): string {
-  const t = (md ?? '').replace(/[#*_`>|-]+/g, ' ').replace(/\s+/g, ' ').trim()
-  return t.length > max ? `${t.slice(0, max - 1)}…` : t
+// Quanto a resposta demorou: `40 s`, `12 min`, `2 h 5 min`.
+export function intervalo(de: string, ate: string): string | null {
+  const s = Math.round((Date.parse(ate) - Date.parse(de)) / 1000)
+  if (!(s >= 0)) return null
+  if (s < 60) return `${s} s`
+  const min = Math.round(s / 60)
+  return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ''}`
 }
