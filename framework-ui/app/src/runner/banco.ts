@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync, type StatementSync } from 'node:sqlite'
 import { type Contagem, contarPlacar, placarDe } from '../shared/placar.ts'
-import type { EstadoAtual, Execucao, ExecucaoResumo, Rodada, Veredito } from '../shared/tipos.ts'
+import type { EstadoAtual, Execucao, ExecucaoResumo, RepoCodigo, Rodada, Veredito } from '../shared/tipos.ts'
 import { migracoes } from './migracoes.ts'
 
 function abrirBanco(ws: string): DatabaseSync {
@@ -247,6 +247,35 @@ export class Repositorio {
 
   mudarVeredito(id: number, veredito: Veredito, nota: string | null): void {
     this.sql('update execucoes set veredito = ?, nota = ? where id = ?').run(veredito, nota, id)
+  }
+
+  // Espelha o repos.txt: o que entrou ou mudou é gravado, o que saiu ganha removido_em.
+  sincronizarRepos(repos: Pick<RepoCodigo, 'nome' | 'url' | 'pasta'>[]): void {
+    const agora = new Date().toISOString()
+    this.db.exec('begin')
+    try {
+      for (const r of repos) {
+        this.sql(
+          `insert into repositorios (nome, url, pasta, registrado_em) values (?, ?, ?, ?)
+           on conflict(nome) do update set url = excluded.url, pasta = excluded.pasta, removido_em = null`,
+        ).run(r.nome, r.url, r.pasta, agora)
+      }
+      this.sql('update repositorios set removido_em = ? where removido_em is null and nome not in (select value from json_each(?))').run(
+        agora,
+        JSON.stringify(repos.map((r) => r.nome)),
+      )
+      this.db.exec('commit')
+    } catch (e) {
+      this.db.exec('rollback')
+      throw e
+    }
+  }
+
+  repos(): Pick<RepoCodigo, 'nome' | 'url' | 'pasta'>[] {
+    return this.sql('select nome, url, pasta from repositorios where removido_em is null order by nome').all() as Pick<
+      RepoCodigo,
+      'nome' | 'url' | 'pasta'
+    >[]
   }
 }
 

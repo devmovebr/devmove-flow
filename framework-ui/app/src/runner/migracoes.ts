@@ -37,4 +37,17 @@ export const migracoes: { versao: number; sql: string }[] = [
     versao: 2,
     sql: 'create index execucoes_cenario on execucoes(rodada_id, cenario, executada_em, veredito);',
   },
+  {
+    // repos.txt é a fonte da verdade; a tabela é o espelho gravado pelo servidor da UI.
+    versao: 3,
+    sql: `
+      create table repositorios (
+        nome text primary key,
+        url text not null,
+        pasta text not null,
+        registrado_em text not null,
+        removido_em text
+      );
+    `,
+  },
 ]

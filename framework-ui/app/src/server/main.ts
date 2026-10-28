@@ -2,14 +2,16 @@ import { EventEmitter } from 'node:events'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import fastifyStatic from '@fastify/static'
-import Fastify, { type FastifyError, type FastifyReply } from 'fastify'
+import Fastify, { type FastifyError } from 'fastify'
 import type { DemandaDetalhe, Execucao, Info, Matriz, Requisicao, Rodada } from '../shared/tipos.ts'
 import { repositorio, semMd } from '../runner/banco.ts'
 import { ErroRunner, envioAvulso, iniciarRodada, mudarVeredito } from '../runner/executor.ts'
-import { listarAmbientes } from '../runner/variaveis.ts'
+import { comandosDoAmbiente, gerarValor, listarAmbientes } from '../runner/variaveis.ts'
 import { demanda, idsCenarios, lerProjetosRegistrados, lerSuite, listarDemandas, listarProjetos, validarDossie } from '../runner/workspaces.ts'
 import { arquivoSessao, lerDesde, listarSessoes } from './logs.ts'
+import { registrarApps } from './apps.ts'
 import { lerConversa, listarConversas } from './mensagens.ts'
+import { abrirSse } from './sse.ts'
 
 function raizApp(): string {
   let dir = import.meta.dirname
@@ -57,17 +59,6 @@ const rodadaCompleta = (ws: string, id: number): Rodada & { execucoes: Execucao[
   execucoes: repositorio(ws).execucoesDaRodada(id).map(semMd),
 })
 
-function abrirSse(reply: FastifyReply): (evento: string, dados: unknown) => void {
-  reply.hijack()
-  reply.raw.writeHead(200, {
-    'content-type': 'text/event-stream; charset=utf-8',
-    'cache-control': 'no-cache',
-    connection: 'keep-alive',
-    'x-accel-buffering': 'no',
-  })
-  return (evento, dados) => reply.raw.write(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`)
-}
-
 const app = Fastify({ logger: { level: process.env.LOG ?? 'warn' } })
 
 app.setErrorHandler((err: FastifyError | ErroRunner, _req, reply) => {
@@ -81,6 +72,19 @@ app.get('/api/info', async (): Promise<Info> => ({ usuario: USUARIO, versao: VER
 app.get('/api/projetos', async () => projetos())
 
 app.get<{ Params: { p: string } }>('/api/projetos/:p/ambientes', async (req) => listarAmbientes(projeto(req.params.p)))
+
+app.get<{ Params: { p: string; amb: string } }>('/api/projetos/:p/ambientes/:amb/comandos', async (req) =>
+  comandosDoAmbiente(projeto(req.params.p), req.params.amb),
+)
+
+// Única rota que entrega valor de segredo ao browser: pedido explícito de quem está na UI, sem gravar nada.
+app.post<{ Params: { p: string; amb: string; nome: string }; Body: { renovar?: boolean } }>(
+  '/api/projetos/:p/ambientes/:amb/comandos/:nome',
+  async (req) => ({
+    valor: await gerarValor(projeto(req.params.p), req.params.amb, req.params.nome, !!req.body?.renovar),
+    gerado_em: new Date().toISOString(),
+  }),
+)
 
 app.get<{ Params: { p: string } }>('/api/projetos/:p/demandas', async (req) => listarDemandas(projeto(req.params.p)))
 
@@ -268,6 +272,8 @@ app.post<{
     env: b.env,
   })
 })
+
+registrarApps(app, projeto, USUARIO)
 
 const temFront = existsSync(join(WEB, 'index.html'))
 

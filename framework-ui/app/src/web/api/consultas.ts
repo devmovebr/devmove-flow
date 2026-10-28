@@ -1,5 +1,6 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
+  AcaoApp,
   ConversaMc,
   ConversaMcDetalhe,
   DemandaDetalhe,
@@ -8,10 +9,12 @@ import type {
   Execucao,
   Info,
   Matriz,
+  PainelApps,
   Projeto,
   Requisicao,
   Rodada,
   SessaoAgente,
+  Subida,
   Veredito,
 } from '../../shared/tipos'
 import { api, rotasApi } from './cliente'
@@ -29,6 +32,8 @@ export const chaves = {
   conversas: (p: string) => ['conversas', p] as const,
   conversa: (p: string, d: string) => ['conversa', p, d] as const,
   sessoes: (p: string) => ['sessoes', p] as const,
+  apps: (p: string) => ['apps', p] as const,
+  subidas: (p: string, app: string) => ['subidas', p, app] as const,
 }
 
 // Leituras do projeto que mudam quando uma execução é gravada ou tem o veredito trocado.
@@ -77,6 +82,22 @@ export function useProjetos() {
 
 export function useAmbientes(p: string) {
   return useQuery({ queryKey: chaves.ambientes(p), queryFn: () => api<string[]>(rotasApi.ambientes(p)) })
+}
+
+export function useComandos(p: string, amb: string) {
+  return useQuery({
+    queryKey: ['comandos', p, amb],
+    queryFn: () => api<{ nome: string; comando: string }[]>(rotasApi.comandos(p, amb)),
+    enabled: !!amb,
+  })
+}
+
+// Segredo gerado sob demanda: fica só no estado da mutação, nunca no cache de consultas.
+export function useGerarValor(p: string) {
+  return useMutation({
+    mutationFn: ({ amb, nome, renovar }: { amb: string; nome: string; renovar: boolean }) =>
+      api<{ valor: string; gerado_em: string }>(rotasApi.gerarValor(p, amb, nome), { method: 'POST', body: { renovar } }),
+  })
 }
 
 export function useDemandas(p: string) {
@@ -156,5 +177,43 @@ export type PedidoEnvio = {
 export function useEnviar(p: string) {
   return useMutation({
     mutationFn: (corpo: PedidoEnvio) => api<EnvioResultado>(rotasApi.enviar(p), { method: 'POST', body: corpo }),
+  })
+}
+
+// O supervisor do host regrava o estado das apps; a lista acompanha por polling, inclusive para o contador da sidebar.
+export function useApps(p: string) {
+  return useQuery({
+    queryKey: chaves.apps(p),
+    queryFn: () => api<PainelApps>(rotasApi.apps(p)),
+    refetchInterval: AO_VIVO,
+    enabled: !!p,
+  })
+}
+
+export function useSubidas(p: string, app: string) {
+  return useQuery({
+    queryKey: chaves.subidas(p, app),
+    queryFn: () => api<Subida[]>(rotasApi.subidas(p, app)),
+    refetchInterval: 10_000,
+    enabled: !!app,
+  })
+}
+
+export function useAcaoApp(p: string) {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ app, acao }: { app: string; acao: AcaoApp }) => api<unknown>(rotasApi.acaoApp(p, app, acao), { method: 'POST' }),
+    onSuccess: (_, { app }) => {
+      cliente.invalidateQueries({ queryKey: chaves.apps(p) })
+      cliente.invalidateQueries({ queryKey: chaves.subidas(p, app) })
+    },
+  })
+}
+
+export function useLogAnterior(p: string, app: string, ativo: boolean) {
+  return useQuery({
+    queryKey: ['log-anterior', p, app],
+    queryFn: () => api<{ linhas: string[]; cortado: boolean }>(rotasApi.logAnterior(p, app)),
+    enabled: ativo && !!app,
   })
 }

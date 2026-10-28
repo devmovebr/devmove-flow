@@ -1,7 +1,7 @@
-import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import type { EventoSessao, SessaoAgente, SituacaoSessao } from '../shared/tipos.ts'
-import { lerCacheado } from '../runner/arquivos.ts'
+import { lerCacheado, lerTrecho } from '../runner/arquivos.ts'
 import { ErroRunner } from '../runner/erros.ts'
 import { listarConversas } from './mensagens.ts'
 
@@ -99,17 +99,8 @@ export function listarSessoes(ws: string): SessaoAgente[] {
     .sort((a, b) => b.atualizada_em.localeCompare(a.atualizada_em))
 }
 
-// Lê do byte `de` até a última quebra de linha; devolve os eventos e onde parou.
+// Eventos completos desde o byte `de`; `ate` = -1 quando a ponte recriou o arquivo.
 export function lerDesde(arq: string, de: number): { eventos: EventoSessao[]; ate: number } {
-  const tamanho = statSync(arq).size
-  if (tamanho <= de) return { eventos: [], ate: tamanho < de ? -1 : de }
-  const fd = openSync(arq, 'r')
-  try {
-    const buf = Buffer.alloc(tamanho - de)
-    const lidos = readSync(fd, buf, 0, buf.length, de)
-    const completo = buf.subarray(0, lidos).lastIndexOf(0x0a) + 1
-    return { eventos: parsearEventos(buf.toString('utf8', 0, completo)), ate: de + completo }
-  } finally {
-    closeSync(fd)
-  }
+  const { texto, ate } = lerTrecho(arq, de)
+  return { eventos: parsearEventos(texto), ate }
 }

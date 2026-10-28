@@ -1,6 +1,6 @@
 # DevMove Painel: especificação
 
-Ferramenta visual do harness. Módulos: Testes, Mensagens (troca com o Mission Control, de `<dossiê>/mensagens-mc.md`) e Logs de agentes (sessões da ponte, de `<workspace>/.agents-bridge/data/logs/<ITEM>.jsonl`, desenhadas como o terminal do Claude Code e acompanhadas por SSE). Um usuário, sem login.
+Ferramenta visual do harness. Módulos: Testes, Aplicações (subida dos serviços de `code/` pelo supervisor do host, com log ao vivo), Mensagens (troca com o Mission Control, de `<dossiê>/mensagens-mc.md`) e Logs de agentes (sessões da ponte, de `<workspace>/.agents-bridge/data/logs/<ITEM>.jsonl`, desenhadas como o terminal do Claude Code e acompanhadas por SSE). Um usuário, sem login.
 
 ## Stack
 
@@ -150,6 +150,35 @@ PASSOU
 
 O curl usa variáveis de shell (`$BASE`, `$TOKEN`), nunca valor de segredo. `parecer-<amb>.md` continua escrito pela `nina-qa`.
 
+## Aplicações
+
+Sobe e para os serviços de `code/` e mostra o log ao vivo. A UI roda em container e não tem o JDK, o Node nem as CLIs da máquina: quem sobe é o supervisor no host (`tools/apps.sh supervisor`, ou `ligar` em segundo plano), e os dois conversam por arquivo em `<workspace>/.devmove/apps/`:
+
+| Arquivo | Quem escreve | O quê |
+|---|---|---|
+| `pedidos/<ts>-<id>.json` | UI | `{app, acao: subir|parar|reiniciar, autor, criado_em}`; o supervisor lê a cada 1s e apaga |
+| `estado/<app>.json` | supervisor e CLI | `EstadoApp`: situação, pid, início, fim, código de saída, erro, autor, subida |
+| `estado/<app>.saida` | wrapper da app | código de saída quando a app termina sozinha |
+| `logs/<app>.log`, `logs/<app>.anterior.log` | a app (stdout e stderr) | uma subida por arquivo; a subida nova renomeia o atual para `.anterior` |
+| `supervisor.json` | supervisor | batimento a cada 2s (`{pid, visto_em}`); mais de 6s parado = desligado |
+
+Roteiro por máquina em `tools/.local/apps.json` (fora do git), gerado pelo `/apps`: `{ "<app>": {repo?, pasta?, comando, env?, antes?, porta?, health?} }`. `comando` roda com `bash -c` na `pasta` (padrão `code/<repo>`), depois dos `antes` na raiz do workspace.
+
+- A app nasce desacoplada do supervisor (detached, stdout direto no arquivo): supervisor que cai não derruba app, e ao voltar retoma pelo pid gravado.
+- Situação: `subindo` → `no_ar` quando `health` responde < 400, ou a `porta` aceita conexão, ou logo que o processo vive se não há nenhum dos dois. Processo que some: `parada` com código 0, `falhou` com outro ou sem código.
+- Parar: Unix, TERM no grupo e KILL após 10s. Windows, `taskkill /T /F` em cada processo do grupo do msys (o `exec` do msys quebra a cadeia de pais do Windows).
+- O lado do host (supervisor e CLI) nunca grava no SQLite: o WAL não é coerente entre o Windows ou macOS e o container do Docker Desktop. Cada subida vai para `subidas.jsonl` (início e fim em linhas acrescentadas); `tools/repos.txt` é espelhado na tabela `repositorios` pelo servidor da UI quando muda.
+
+CLI `tools/apps.sh` (→ `tools/apps.mjs`, Node ≥ 22.13 do host, sem fallback para o container):
+
+| Comando | Faz |
+|---|---|
+| `listar` | apps com situação, pid, porta, tempo no ar; repos sem roteiro; supervisor |
+| `up <app> [--sem-esperar|--esperar <s>]`, `down <app>`, `restart <app>` | sobe e espera ficar no ar (300s), para, reinicia. Sem supervisor |
+| `logs <app> [-f] [-n <linhas>] [--anterior]` | cauda e acompanhamento do log |
+| `supervisor`, `ligar`, `desligar` | supervisor em primeiro ou segundo plano |
+| `repo adicionar <pasta> <url>`, `repo listar` | clona em `code/`, acrescenta ao `repos.txt` com commit só dele e espelha no banco |
+
 ## CLI (`tools/qa.sh` → `node tools/qa.mjs`)
 
 | Comando | Faz |
@@ -177,7 +206,14 @@ Prefixo `/api`. `:p` = nome do projeto. `:d` = `<tipo>/<slug>` codificado com `e
 | `GET /projetos/:p/rodadas/:id` | `Rodada & {execucoes: Execucao[]}` |
 | `GET /projetos/:p/rodadas/:id/eventos` | SSE: `execucao` (Execucao), `fim` (Rodada) |
 | `POST /projetos/:p/rodadas/:id/parar` | `Rodada` com status `interrompida` |
+| `GET /projetos/:p/apps` | `PainelApps`: `{supervisor: {ligado, visto_em}, apps: App[], repos_sem_app: RepoCodigo[], erro_config}` |
+| `POST /projetos/:p/apps/:app/:acao` | acao em `subir`, `parar`, `reiniciar`: grava o pedido na fila, `202` |
+| `GET /projetos/:p/apps/:app/log` | SSE: `inicio` `{linhas, cortado}` com os últimos 256 KB (reenviado quando a subida recria o log), `linhas` com o trecho novo. ANSI removido |
+| `GET /projetos/:p/apps/:app/log/anterior` | `{linhas, cortado}` do log da subida anterior |
+| `GET /projetos/:p/apps/:app/subidas` | `Subida[]`, as 20 últimas |
 | `PATCH /projetos/:p/execucoes/:id` `{veredito, nota}` | `Execucao`; regrava a evidência |
+| `GET /projetos/:p/ambientes/:amb/comandos` | `[{nome, comando}]`: variáveis `<NOME>_CMD` do ambiente, sem executar |
+| `POST /projetos/:p/ambientes/:amb/comandos/:nome` `{renovar?}` | `{valor, gerado_em}`. Única rota que entrega segredo ao browser, por pedido explícito (Gerar token); nada é gravado |
 | `POST /projetos/:p/enviar` `{ambiente, dossie?, cenario?, request: {method,url,headers,body}, env?}` | `{request, resposta, erro, assercoes}` sem gravar. Variáveis resolvidas no servidor |
 
 Tipos:
@@ -197,7 +233,7 @@ type EstadoAtual = { ambiente: string; atualizado_em: string; placar: Placar; ex
 
 Referências em `framework-ui/referencias/`. Seguir à risca: tema escuro, fundo quase preto, cards com borda fina, acento rosa/magenta, tipografia Poppins, badges de status verde/vermelho/laranja, contadores com ícone circular, donut de %.
 
-Shell (todas as referências): sidebar com logo, seletor de projeto, menu `Testes`, `Mensagens` e `Logs de agentes`. Topo com breadcrumb `Projeto > Testes > <tela>` e título "Testes". Rótulos em português.
+Shell (todas as referências): sidebar com logo, seletor de projeto, menu `Testes`, `Mensagens`, `Logs de agentes` e `Aplicações` (contador de apps no ar). Topo com breadcrumb `Projeto > Testes > <tela>` e título "Testes". Rótulos em português.
 
 | Rota | Referência | Conteúdo |
 |---|---|---|
@@ -205,4 +241,5 @@ Shell (todas as referências): sidebar com logo, seletor de projeto, menu `Teste
 | `/:p/testes/:d` | `16.29.02` | Suíte. Esquerda: "Estado atual" por ambiente (padrão) e rodadas ("#14 · staging · manual · 15 set 10:02", check com % e falhas). Direita: cenários da rodada selecionada com status, último tempo e quem executou. Botões `Executar suíte` (escolhe ambiente) e `Comparar rodadas`. Árvore da `16.29.14` como alternativa de navegação no toggle de layout |
 | `/:p/testes/:d/rodadas/:id` | `16.28.41` | Rodada. Card por cenário: número, chamada (método + caminho), pré-condição, esperado, badge de resultado. Ícone de bug no falho. Faixa "#14 · EXECUTANDO" com `Parar` durante SSE. Clique no card abre o cenário |
 | `/:p/testes/:d/cenarios/:c` | sem referência, mesmo estilo | Cenário (substituto do Postman). Ambiente, editor de método/URL/headers/body com `{{VAR}}` destacado, `Enviar` (efêmero, `/enviar`), `Executar cenário` (grava rodada). Resposta: status, tempo, tamanho, abas corpo (JSON formatado e colapsável), headers, asserções. Painel de histórico do cenário. Editar veredito e nota da última execução |
+| `/:p/aplicacoes/:app?` | sem referência, mesmo estilo | Aplicações. Esquerda: apps com selo de situação, porta, tempo no ar e play/parar/reiniciar (desabilitados com o supervisor desligado, que ganha faixa com o comando); repos sem roteiro; últimas subidas. Direita: console da app no visual do terminal, destaque de ERROR/WARN, filtro, `Limpar` (esvazia a visão e segue só com o novo), `Seguir`, `Anterior` |
 | `/:p/testes/:d/comparar` | `16.28.51` | Matriz cenário × rodada com badge por célula, filtro por ambiente |

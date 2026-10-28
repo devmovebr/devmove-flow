@@ -191,3 +191,44 @@ export type SessaoAgente = {
   eventos: number
   atualizada_em: string
 }
+
+// Aplicações de code/ que o supervisor do host sobe: config em `tools/.local/apps.json`, estado em `.devmove/apps/`.
+export type SituacaoApp = 'parada' | 'subindo' | 'no_ar' | 'falhou' | 'parando'
+
+export type EstadoApp = {
+  situacao: SituacaoApp
+  pid: number | null
+  iniciada_em: string | null
+  finalizada_em: string | null
+  codigo_saida: number | null
+  erro: string | null
+  autor: string | null
+  subida_id: string | null
+}
+
+export type App = EstadoApp & {
+  nome: string
+  repo: string
+  pasta: string
+  comando: string
+  porta: number | null
+  health: string | null
+}
+
+export type RepoCodigo = { nome: string; url: string; pasta: string; clonado: boolean; apps: string[] }
+
+export type SupervisorApps = { ligado: boolean; visto_em: string | null }
+
+export type PainelApps = { supervisor: SupervisorApps; apps: App[]; repos_sem_app: RepoCodigo[]; erro_config: string | null }
+
+export type AcaoApp = 'subir' | 'parar' | 'reiniciar'
+
+export type Subida = {
+  id: string
+  app: string
+  autor: string
+  iniciada_em: string
+  finalizada_em: string | null
+  situacao_final: SituacaoApp | null
+  codigo_saida: number | null
+}

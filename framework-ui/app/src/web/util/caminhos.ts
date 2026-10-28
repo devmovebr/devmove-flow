@@ -6,6 +6,8 @@ export const caminhos = {
   mensagens: (p: string) => `/${seg(p)}/mensagens`,
   conversa: (p: string, d: string) => `/${seg(p)}/mensagens/${d}`,
   logs: (p: string) => `/${seg(p)}/logs`,
+  aplicacoes: (p: string) => `/${seg(p)}/aplicacoes`,
+  aplicacao: (p: string, app: string) => `/${seg(p)}/aplicacoes/${seg(app)}`,
   sessao: (p: string, item: string) => `/${seg(p)}/logs/${seg(item)}`,
   demandas: (p: string) => `/${seg(p)}/testes`,
   suite: (p: string, d: string) => `/${seg(p)}/testes/${d}`,
@@ -16,8 +18,8 @@ export const caminhos = {
 
 // O dossiê `<tipo>/<slug>` ocupa dois segmentos da URL.
 export function useRota() {
-  const { p = '', tipo = '', slug = '', id, c = '', item = '' } = useParams()
-  return { p, d: tipo && slug ? `${tipo}/${slug}` : '', tipo, slug, id: id ? Number(id) : null, c, item }
+  const { p = '', tipo = '', slug = '', id, c = '', item = '', app = '' } = useParams()
+  return { p, d: tipo && slug ? `${tipo}/${slug}` : '', tipo, slug, id: id ? Number(id) : null, c, item, app }
 }
 
 export function useModulo(): { rotulo: string; para: string } {
@@ -26,5 +28,6 @@ export function useModulo(): { rotulo: string; para: string } {
   const modulo = pathname.split('/')[2]
   if (modulo === 'mensagens') return { rotulo: 'Mensagens', para: caminhos.mensagens(p) }
   if (modulo === 'logs') return { rotulo: 'Logs de agentes', para: caminhos.logs(p) }
+  if (modulo === 'aplicacoes') return { rotulo: 'Aplicações', para: caminhos.aplicacoes(p) }
   return { rotulo: 'Testes', para: caminhos.demandas(p) }
 }

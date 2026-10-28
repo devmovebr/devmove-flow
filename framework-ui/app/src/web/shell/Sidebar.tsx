@@ -1,6 +1,6 @@
-import { ChevronsUpDown, FlaskConical, MessagesSquare, SquareTerminal } from 'lucide-react'
+import { ChevronsUpDown, FlaskConical, MessagesSquare, Server, SquareTerminal } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
-import { useConversas, useInfo, useProjetos, useSessoes } from '../api/consultas'
+import { useApps, useConversas, useInfo, useProjetos, useSessoes } from '../api/consultas'
 import { Avatar } from '../ui/Avatar'
 import { caminhos, useRota } from '../util/caminhos'
 
@@ -49,6 +49,8 @@ export function Sidebar() {
   const aguardando = conversas.reduce((n, c) => n + c.aguardando, 0)
   const { data: sessoes = [] } = useSessoes(p)
   const executando = sessoes.filter((s) => s.situacao === 'executando').length
+  const { data: apps } = useApps(p)
+  const noAr = apps?.apps.filter((a) => a.situacao === 'no_ar').length ?? 0
   return (
     <aside className="flex w-[216px] shrink-0 flex-col border-r border-borda bg-fundo">
       <div className="flex h-11 items-center gap-2 px-4">
@@ -90,6 +92,19 @@ export function Sidebar() {
             >
               <span className="size-1.5 animate-pulse rounded-full bg-acento-forte" />
               {executando}
+            </span>
+          )}
+        </NavLink>
+        <NavLink to={caminhos.aplicacoes(p)} className={classeItem}>
+          <Server size={14} />
+          Aplicações
+          {noAr > 0 && (
+            <span
+              title={`${noAr} aplicação(ões) no ar`}
+              className="ml-auto flex items-center gap-1 rounded-full bg-passou/15 px-1.5 py-px text-[10px] font-medium text-passou tabular-nums"
+            >
+              <span className="size-1.5 rounded-full bg-passou" />
+              {noAr}
             </span>
           )}
         </NavLink>

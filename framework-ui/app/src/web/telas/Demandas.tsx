@@ -1,15 +1,17 @@
-import { ChevronRight, FileText, Server } from 'lucide-react'
+import { ChevronRight, FileText, KeyRound, Server } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Demanda } from '../../shared/tipos'
 import { useDemandas } from '../api/consultas'
 import { Topo } from '../shell/Topo'
 import { Abas } from '../ui/Abas'
+import { Botao } from '../ui/Botao'
 import { Contadores } from '../ui/Contadores'
 import { Donut } from '../ui/Donut'
 import { Carregando, Erro, Vazio } from '../ui/Estado'
 import { caminhos, useRota } from '../util/caminhos'
 import { dataDia, slugCurto } from '../util/formato'
+import { ModalToken } from './ModalToken'
 import { corStatusIndex, executados, percentual, statusCurto } from '../util/veredito'
 
 function LinhaDemanda({ demanda }: { demanda: Demanda }) {
@@ -71,6 +73,7 @@ export function Demandas() {
   const { p } = useRota()
   const { data, isPending, error } = useDemandas(p)
   const [filtro, setFiltro] = useState('todas')
+  const [token, setToken] = useState(false)
 
   const lista = data ?? []
   const porStatus = Map.groupBy(lista, (d) => statusCurto(d.status))
@@ -78,7 +81,13 @@ export function Demandas() {
 
   return (
     <>
-      <Topo migalhas={[{ rotulo: 'Demandas' }]} />
+      <Topo migalhas={[{ rotulo: 'Demandas' }]}>
+        <Botao onClick={() => setToken(true)} title="Roda o comando de token de um ambiente e mostra o valor para copiar">
+          <KeyRound size={13} />
+          Gerar token
+        </Botao>
+      </Topo>
+      {token && <ModalToken aoFechar={() => setToken(false)} />}
       <div className="flex items-center justify-between border-b border-borda px-6 pb-3">
         <Abas
           valor={filtro}

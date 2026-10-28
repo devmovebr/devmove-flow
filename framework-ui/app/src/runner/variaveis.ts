@@ -47,10 +47,10 @@ export function arquivoLocal(ws: string, amb: string): string {
   return join(ws, 'tools', '.local', 'ambientes', `${amb}.env`)
 }
 
-function rodarComando(ws: string, cmd: string): Promise<string> {
+function rodarComando(ws: string, cmd: string, renovar = false): Promise<string> {
   const chave = `${ws}\0${cmd}`
   const c = cacheCmd.get(chave)
-  if (c && c.expira > Date.now()) return Promise.resolve(c.valor)
+  if (!renovar && c && c.expira > Date.now()) return Promise.resolve(c.valor)
   return new Promise((resolve, reject) => {
     execFile('bash', ['-c', cmd], { cwd: ws, timeout: 30_000 }, (err, stdout, stderr) => {
       if (err) return reject(new Error(`comando "${cmd}" falhou: ${(stderr || err.message).trim()}`))
@@ -91,6 +91,27 @@ export async function resolverVariaveis(
   for (const [nome, cmd] of Object.entries(v.comandos)) v.valores[nome] = await rodarComando(ws, cmd)
   for (const [nome, fonte] of Object.entries(v.fontes)) if (fonte === 'local' || fonte === 'cmd') v.segredos.add(nome)
   return v
+}
+
+// Variáveis `<NOME>_CMD` do ambiente, sem executar, com a mesma precedência do resolverVariaveis.
+export function comandosDoAmbiente(ws: string, amb: string): { nome: string; comando: string }[] {
+  const arqAmb = join(ws, 'tools', 'ambientes', `${amb}.env`)
+  if (!existsSync(arqAmb)) throw new Error(`ambiente desconhecido: ${amb}`)
+  const comandos = new Map<string, string>()
+  for (const valores of [lerArquivoEnv(arqAmb), lerArquivoEnv(arquivoLocal(ws, amb))]) {
+    for (const [chave, valor] of Object.entries(valores)) {
+      if (chave.endsWith('_CMD')) comandos.set(chave.slice(0, -4), valor)
+      else comandos.delete(chave)
+    }
+  }
+  return [...comandos].map(([nome, comando]) => ({ nome, comando }))
+}
+
+// Valor avulso pedido na UI (Gerar token). `renovar` ignora o cache de 5 minutos.
+export async function gerarValor(ws: string, amb: string, nome: string, renovar: boolean): Promise<string> {
+  const c = comandosDoAmbiente(ws, amb).find((x) => x.nome === nome)
+  if (!c) throw new Error(`${nome}_CMD não existe no ambiente ${amb}`)
+  return rodarComando(ws, c.comando, renovar)
 }
 
 export function nomesUsados(texto: string): string[] {
