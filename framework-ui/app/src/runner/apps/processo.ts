@@ -17,7 +17,7 @@ import {
 } from './config.ts'
 import { criarSubida, finalizarSubida } from './subidas.ts'
 
-export const PARADA: EstadoApp = {
+const PARADA: EstadoApp = {
   situacao: 'parada',
   pid: null,
   iniciada_em: null,

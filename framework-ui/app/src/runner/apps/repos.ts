@@ -9,10 +9,10 @@ import { type ConfigApp, NOME_VALIDO } from './config.ts'
 
 type RepoTxt = Pick<RepoCodigo, 'nome' | 'url' | 'pasta'>
 
-export const arquivoRepos = (ws: string) => join(ws, 'tools', 'repos.txt')
+const arquivoRepos = (ws: string) => join(ws, 'tools', 'repos.txt')
 
 // `<pasta em code/> <url git>` por linha; comentário e marcador do framework não instalado ficam de fora.
-export function parsearRepos(texto: string): RepoTxt[] {
+function parsearRepos(texto: string): RepoTxt[] {
   return texto
     .split('\n')
     .map((l) => l.trim())

@@ -113,7 +113,7 @@ def renderizar(ref, nome):
     raiz = os.path.join(tmp, nome)
     if ref is None:
         for p in ("framework", "setup"):
-            shutil.copytree(os.path.join(fonte, p), os.path.join(raiz, p), ignore=shutil.ignore_patterns(".DS_Store"))
+            shutil.copytree(os.path.join(fonte, p), os.path.join(raiz, p), ignore=shutil.ignore_patterns(".DS_Store", "__pycache__"))
         shutil.copy(os.path.join(fonte, "VERSION"), raiz)
     else:
         tar = run("git", "-C", fonte, "archive", ref, "framework", "setup", "VERSION")

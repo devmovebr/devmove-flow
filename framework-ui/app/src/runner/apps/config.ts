@@ -49,7 +49,7 @@ function pastaInterna(pasta: string, app: string): string {
   return n
 }
 
-export function parsearConfig(conteudo: string): ConfigApp[] {
+function parsearConfig(conteudo: string): ConfigApp[] {
   let bruto: unknown
   try {
     bruto = JSON.parse(conteudo)

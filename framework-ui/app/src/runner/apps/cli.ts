@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { closeSync, existsSync, openSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { relative } from 'node:path'
+import { duracao } from '../../shared/tempo.ts'
 import type { App } from '../../shared/tipos.ts'
 import { lerTrecho } from '../arquivos.ts'
 import { acharWorkspace } from '../workspaces.ts'
@@ -20,7 +21,7 @@ const USO = `Uso: tools/apps.sh <comando> [args]
   supervisor                                atende a UI em primeiro plano
   ligar | desligar                          supervisor em segundo plano
   inicializacao <instalar|remover|status>   supervisor ligado junto com a máquina
-  repo adicionar <pasta> <url>               clona em code/, registra no repos.txt (commit) e no banco
+  repo adicionar <pasta> <url>               clona em code/ e registra no repos.txt com commit
   repo listar
 Apps em tools/.local/apps.json (gerado pelo /apps).`
 
@@ -31,14 +32,6 @@ function sair(msg: string, codigo = 2): never {
 
 const autor = () => process.env.DEVMOVE_USUARIO || process.env.USER || process.env.USERNAME || 'pessoa'
 const esperar = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
-
-function duracao(desde: string | null): string {
-  if (!desde) return ''
-  const s = Math.max(0, Math.round((Date.now() - Date.parse(desde)) / 1000))
-  if (s < 60) return `${s}s`
-  if (s < 3600) return `${Math.floor(s / 60)}min`
-  return `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`
-}
 
 function linhaApp(a: App): string {
   const partes = [a.nome.padEnd(16), a.situacao.padEnd(8)]

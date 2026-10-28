@@ -7,4 +7,5 @@ tools/.local/*
 !tools/.local/.gitkeep
 .devmove/
 .agents-bridge/
+__pycache__/
 doc/demandas/*/*/mensagens-mc.md

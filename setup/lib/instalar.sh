@@ -22,7 +22,7 @@ done
 versao="$(cat "$raiz/VERSION")"
 hoje="$(date +%F)"
 cd "$raiz/framework"
-find . -type f ! -name ".DS_Store" | sort | while read -r f; do
+find . -type f ! -name ".DS_Store" ! -path "*/__pycache__/*" | sort | while read -r f; do
   destino="$alvo/${f#./}"
   if [ -e "$destino" ]; then
     echo "existe  ${f#./}"

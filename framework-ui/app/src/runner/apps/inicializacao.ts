@@ -9,6 +9,7 @@ import { supervisor } from './processo.ts'
 
 // Um registro por cópia, sem admin: pasta Inicializar no Windows, unidade de usuário do systemd no Linux,
 // agente do launchd no macOS. O hash do caminho separa duas cópias com o mesmo nome de pasta.
+// Só a saída com erro religa o supervisor: o `tools/apps.sh desligar` encerra com código 0 e ele fica desligado.
 const id = (ws: string) =>
   `devmove-apps-${basename(ws).replace(/[^A-Za-z0-9_-]/g, '-')}-${createHash('sha1').update(ws).digest('hex').slice(0, 6)}`
 
@@ -49,7 +50,7 @@ Description=DevMove Flow: supervisor das aplicações de ${ws}
 WorkingDirectory=${ws}
 Environment=PATH=${process.env.PATH ?? ''}
 ExecStart=/usr/bin/env bash ${ws}/tools/apps.sh supervisor
-Restart=always
+Restart=on-failure
 RestartSec=10
 StandardOutput=append:${arquivoLogSupervisor(ws)}
 StandardError=append:${arquivoLogSupervisor(ws)}
@@ -86,7 +87,7 @@ function macos(ws: string): Registro {
   <key>WorkingDirectory</key><string>${esc(ws)}</string>
   <key>EnvironmentVariables</key><dict><key>PATH</key><string>${esc(process.env.PATH ?? '')}</string></dict>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>StandardOutPath</key><string>${esc(arquivoLogSupervisor(ws))}</string>
   <key>StandardErrorPath</key><string>${esc(arquivoLogSupervisor(ws))}</string>
 </dict>
@@ -128,7 +129,9 @@ export function removerInicializacao(ws: string): string {
   if (!existsSync(r.arquivo)) return 'inicialização não estava registrada'
   r.desativar()
   rmSync(r.arquivo, { force: true })
-  return `inicialização removida: ${r.arquivo} (o supervisor atual segue até desligar ou reiniciar a máquina)`
+  return process.platform === 'win32'
+    ? `inicialização removida: ${r.arquivo} (o supervisor atual segue até tools/apps.sh desligar)`
+    : `inicialização removida e supervisor desligado: ${r.arquivo}`
 }
 
 export function statusInicializacao(ws: string): string {

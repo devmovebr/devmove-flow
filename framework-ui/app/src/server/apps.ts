@@ -77,7 +77,14 @@ export function registrarApps(app: FastifyInstance, projeto: (p: string) => stri
         enviar('linhas', linhas(t.texto))
       }
     }
-    const leitura = setInterval(ler, 1_000)
+    // Uma nova subida renomeia e recria o log entre o existsSync e a leitura: a próxima volta pega o arquivo novo.
+    const leitura = setInterval(() => {
+      try {
+        ler()
+      } catch {
+        // log trocado no meio da leitura
+      }
+    }, 1_000)
     const pulso = setInterval(() => reply.raw.write(': pulso\n\n'), 15_000)
     req.raw.on('close', () => {
       clearInterval(leitura)

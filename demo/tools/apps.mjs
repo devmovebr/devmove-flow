@@ -3,6 +3,15 @@ import { spawn as spawn2 } from "node:child_process";
 import { closeSync as closeSync3, existsSync as existsSync7, openSync as openSync3, readFileSync as readFileSync7, rmSync as rmSync4, statSync as statSync3 } from "node:fs";
 import { relative } from "node:path";
 
+// src/shared/tempo.ts
+function duracao(de, ate) {
+  if (!de) return "";
+  const s = Math.max(0, Math.round(((ate ? Date.parse(ate) : Date.now()) - Date.parse(de)) / 1e3));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}min`;
+  return `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, "0")}`;
+}
+
 // src/runner/arquivos.ts
 import { closeSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 var lidos = /* @__PURE__ */ new Map();
@@ -2979,7 +2988,7 @@ Description=DevMove Flow: supervisor das aplica\xE7\xF5es de ${ws}
 WorkingDirectory=${ws}
 Environment=PATH=${process.env.PATH ?? ""}
 ExecStart=/usr/bin/env bash ${ws}/tools/apps.sh supervisor
-Restart=always
+Restart=on-failure
 RestartSec=10
 StandardOutput=append:${arquivoLogSupervisor(ws)}
 StandardError=append:${arquivoLogSupervisor(ws)}
@@ -3015,7 +3024,7 @@ function macos(ws) {
   <key>WorkingDirectory</key><string>${esc(ws)}</string>
   <key>EnvironmentVariables</key><dict><key>PATH</key><string>${esc(process.env.PATH ?? "")}</string></dict>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>StandardOutPath</key><string>${esc(arquivoLogSupervisor(ws))}</string>
   <key>StandardErrorPath</key><string>${esc(arquivoLogSupervisor(ws))}</string>
 </dict>
@@ -3052,7 +3061,7 @@ function removerInicializacao(ws) {
   if (!existsSync6(r.arquivo)) return "inicializa\xE7\xE3o n\xE3o estava registrada";
   r.desativar();
   rmSync2(r.arquivo, { force: true });
-  return `inicializa\xE7\xE3o removida: ${r.arquivo} (o supervisor atual segue at\xE9 desligar ou reiniciar a m\xE1quina)`;
+  return process.platform === "win32" ? `inicializa\xE7\xE3o removida: ${r.arquivo} (o supervisor atual segue at\xE9 tools/apps.sh desligar)` : `inicializa\xE7\xE3o removida e supervisor desligado: ${r.arquivo}`;
 }
 function statusInicializacao(ws) {
   const r = registro(ws);
@@ -3131,7 +3140,7 @@ var USO = `Uso: tools/apps.sh <comando> [args]
   supervisor                                atende a UI em primeiro plano
   ligar | desligar                          supervisor em segundo plano
   inicializacao <instalar|remover|status>   supervisor ligado junto com a m\xE1quina
-  repo adicionar <pasta> <url>               clona em code/, registra no repos.txt (commit) e no banco
+  repo adicionar <pasta> <url>               clona em code/ e registra no repos.txt com commit
   repo listar
 Apps em tools/.local/apps.json (gerado pelo /apps).`;
 function sair(msg, codigo = 2) {
@@ -3140,13 +3149,6 @@ function sair(msg, codigo = 2) {
 }
 var autor = () => process.env.DEVMOVE_USUARIO || process.env.USER || process.env.USERNAME || "pessoa";
 var esperar2 = (ms) => new Promise((ok) => setTimeout(ok, ms));
-function duracao(desde) {
-  if (!desde) return "";
-  const s = Math.max(0, Math.round((Date.now() - Date.parse(desde)) / 1e3));
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}min`;
-  return `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, "0")}`;
-}
 function linhaApp(a) {
   const partes = [a.nome.padEnd(16), a.situacao.padEnd(8)];
   if (a.pid) partes.push(`pid ${a.pid}`);

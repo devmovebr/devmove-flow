@@ -3,7 +3,7 @@ import { type ConfigApp, lerConfig } from './config.ts'
 import { lerEstado, supervisor } from './processo.ts'
 import { listarRepos } from './repos.ts'
 
-export const appDe = (ws: string, c: ConfigApp): App => ({
+const appDe = (ws: string, c: ConfigApp): App => ({
   nome: c.nome,
   repo: c.repo,
   pasta: c.pasta,
