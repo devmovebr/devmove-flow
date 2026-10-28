@@ -27,6 +27,24 @@ checar_docker() {
   docker compose version >/dev/null 2>&1 || { echo "docker compose indisponível" >&2; exit 2; }
 }
 
+# Lado do host de um volume: no Git Bash, caminho do Windows (C:/...), que o Docker Desktop entende mesmo
+# quando o bash o mostra por um ponto de montagem próprio, como /tmp.
+hospedeiro() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi; }
+
+# QA e comando de token usam a rede do host (VPN, localhost dos serviços). No Docker Desktop (Windows e
+# macOS) a rede do host vem desligada e a UI não responde na porta: avisa onde ligar.
+checar_rede() {
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    curl -s -m 2 "http://localhost:$porta/api/info" 2>/dev/null | grep -q versao && return 0
+    sleep 1
+  done
+  if [ "$(uname -s)" != "Linux" ]; then
+    echo "aviso UI sem resposta em localhost:$porta: no Docker Desktop, Settings > Resources > Network > Enable host networking, Apply & restart e rode tools/devmove-ui.sh atualizar" >&2
+  else
+    echo "aviso UI sem resposta em localhost:$porta: docker logs devmove-flow-ui" >&2
+  fi
+}
+
 projetos() { grep -v '^#' "$registro" 2>/dev/null | sed '/^[[:space:]]*$/d' || true; }
 
 gerar() {
@@ -44,9 +62,9 @@ services:
       DEVMOVE_USUARIO: "$(id -un)"
       DEVMOVE_PROJETOS: /config/projetos.txt
     volumes:
-      - "$registro:/config/projetos.txt:ro"
+      - "$(hospedeiro "$registro"):/config/projetos.txt:ro"
 EOF
-  projetos | while read -r p; do echo "      - \"$p:$p\""; done >> "$ui/docker-compose.yml"
+  projetos | while read -r p; do echo "      - \"$(hospedeiro "$p"):$p\""; done >> "$ui/docker-compose.yml"
 }
 
 baixar() {
@@ -74,6 +92,8 @@ case "$cmd" in
     gerar
     baixar
     compor up -d --remove-orphans >/dev/null
+    [ -x "$ws/tools/apps.sh" ] && "$ws/tools/apps.sh" inicializacao instalar || true
+    checar_rede
     echo "registrado $nome em $ui · http://localhost:$porta/$nome/testes · versão $(versao)"
     ;;
   remover)
@@ -82,6 +102,7 @@ case "$cmd" in
     grep -vx "$ws" "$registro" > "$registro.tmp" || true
     mv "$registro.tmp" "$registro"
     rm -f "$lembrado"
+    [ -x "$ws/tools/apps.sh" ] && "$ws/tools/apps.sh" inicializacao remover || true
     gerar
     compor up -d --remove-orphans >/dev/null
     echo "removido $(basename "$ws") de $ui"
@@ -92,10 +113,12 @@ case "$cmd" in
     antes="$(id_imagem)"
     gerar
     baixar
+    [ -x "$ws/tools/apps.sh" ] && "$ws/tools/apps.sh" inicializacao instalar >/dev/null || true
     if [ "$antes" = "$(id_imagem)" ] && docker ps --format '{{.Names}}' | grep -qx devmove-flow-ui; then
       echo "UI em dia $(versao)"
     else
       compor up -d --remove-orphans >/dev/null
+      checar_rede
       echo "UI atualizada $(versao)"
     fi
     ;;

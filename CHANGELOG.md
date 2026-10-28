@@ -4,6 +4,23 @@ Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
 
+## 2.6.0 (2026-10-27)
+
+Origem: cada cópia subia os serviços com scripts próprios, sem padrão, e não havia como subir nem acompanhar o log de uma aplicação pela UI.
+
+Novidades
+- [ ] `/apps [repo]`: descobre como subir cada repositório nesta máquina (Java por versão, Node, Azure Functions, script que a cópia já tinha), grava o roteiro em `tools/.local/apps.json` (fora do git) e prova cada app subindo e parando.
+- [ ] `tools/apps.sh` (`listar`, `up`, `down`, `restart`, `logs`): sobe e para as apps no host, com log em `.devmove/apps/logs/<app>.log` e a subida anterior guardada. `ligar` deixa o supervisor que atende o play da UI rodando em segundo plano.
+- [ ] `tools/apps.sh repo adicionar <pasta> <url>`: clona em `code/`, acrescenta ao `tools/repos.txt` com commit só dele; a UI espelha no banco da cópia; `repo listar` mostra o que tem roteiro.
+- [ ] DevMove Flow UI, menu Aplicações: play, parar e reiniciar por app, log ao vivo com Limpar, Seguir, filtro e log anterior, histórico de subidas e contador de apps no ar na sidebar.
+- [ ] `tools/apps.sh inicializacao <instalar|remover|status>`: o supervisor sobe junto com a máquina, sem admin (pasta Inicializar no Windows, unidade de usuário do systemd no Linux, agente do launchd no macOS). `tools/devmove-ui.sh registrar` e `atualizar` registram; `remover` tira.
+- [ ] DevMove Flow UI, menu Testes, `Gerar token`: escolhe o ambiente, roda o `<NOME>_CMD` (com `Renovar` para ignorar o cache) e mostra o valor para copiar, com a validade quando é JWT. Nada é gravado.
+- [ ] `tools/qa.sh` roda dentro do container da UI quando ele está de pé: o SQLite em WAL não é coerente entre host e container no Docker Desktop, e o banco passa a ter um lado só gravando. Pelo mesmo motivo, supervisor e `apps.sh` nunca gravam no banco.
+- [ ] A UI usa a rede do host em todo sistema (QA e token alcançam VPN e `localhost` da máquina). No Docker Desktop (Windows e macOS) é preciso ligar Settings > Resources > Network > Enable host networking; o `devmove-ui.sh` avisa quando a UI não responde. Volumes com caminho do Windows (`cygpath -m`).
+- [ ] `.gitattributes` com `*.sh text eol=lf`: script com CRLF do checkout no Windows não roda no container. Cópia já clonada no Windows, com os `.sh` sem mudança local: `git ls-files '*.sh' | xargs rm -f && git checkout -- '*.sh'` regrava os scripts em LF.
+- [ ] `/infra` e `igor-infra-local` sobem o serviço por `tools/apps.sh` quando há roteiro.
+- [ ] Banco da cópia: tabela `repositorios`, espelho do `repos.txt` gravado pela UI. Histórico de subidas em `.devmove/apps/subidas.jsonl`.
+
 ## 2.5.0 (2026-10-27)
 
 Origem: cópias respondendo em inglês quando o relato, o código ou a ferramenta vinham em inglês.

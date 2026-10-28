@@ -57,6 +57,19 @@ var migracoes = [
     // Cobre placar, estado atual e histórico sem ler a linha inteira: veredito e executada_em vêm depois dos JSON grandes.
     versao: 2,
     sql: "create index execucoes_cenario on execucoes(rodada_id, cenario, executada_em, veredito);"
+  },
+  {
+    // repos.txt é a fonte da verdade; a tabela é o espelho gravado pelo servidor da UI.
+    versao: 3,
+    sql: `
+      create table repositorios (
+        nome text primary key,
+        url text not null,
+        pasta text not null,
+        registrado_em text not null,
+        removido_em text
+      );
+    `
   }
 ];
 
@@ -244,6 +257,30 @@ var Repositorio = class {
   }
   mudarVeredito(id, veredito, nota) {
     this.sql("update execucoes set veredito = ?, nota = ? where id = ?").run(veredito, nota, id);
+  }
+  // Espelha o repos.txt: o que entrou ou mudou é gravado, o que saiu ganha removido_em.
+  sincronizarRepos(repos) {
+    const agora = (/* @__PURE__ */ new Date()).toISOString();
+    this.db.exec("begin");
+    try {
+      for (const r of repos) {
+        this.sql(
+          `insert into repositorios (nome, url, pasta, registrado_em) values (?, ?, ?, ?)
+           on conflict(nome) do update set url = excluded.url, pasta = excluded.pasta, removido_em = null`
+        ).run(r.nome, r.url, r.pasta, agora);
+      }
+      this.sql("update repositorios set removido_em = ? where removido_em is null and nome not in (select value from json_each(?))").run(
+        agora,
+        JSON.stringify(repos.map((r) => r.nome))
+      );
+      this.db.exec("commit");
+    } catch (e) {
+      this.db.exec("rollback");
+      throw e;
+    }
+  }
+  repos() {
+    return this.sql("select nome, url, pasta from repositorios where removido_em is null order by nome").all();
   }
 };
 var repositorios = /* @__PURE__ */ new Map();
@@ -2562,10 +2599,10 @@ function listarAmbientes(ws) {
 function arquivoLocal(ws, amb) {
   return join2(ws, "tools", ".local", "ambientes", `${amb}.env`);
 }
-function rodarComando(ws, cmd) {
+function rodarComando(ws, cmd, renovar = false) {
   const chave = `${ws}\0${cmd}`;
   const c = cacheCmd.get(chave);
-  if (c && c.expira > Date.now()) return Promise.resolve(c.valor);
+  if (!renovar && c && c.expira > Date.now()) return Promise.resolve(c.valor);
   return new Promise((resolve2, reject) => {
     execFile("bash", ["-c", cmd], { cwd: ws, timeout: 3e4 }, (err, stdout, stderr) => {
       if (err) return reject(new Error(`comando "${cmd}" falhou: ${(stderr || err.message).trim()}`));
@@ -2800,7 +2837,7 @@ import { existsSync as existsSync2, readFileSync as readFileSync3, readdirSync a
 import { basename, dirname, join as join3, resolve } from "node:path";
 
 // src/runner/arquivos.ts
-import { readFileSync as readFileSync2, statSync } from "node:fs";
+import { closeSync, openSync, readFileSync as readFileSync2, readSync, statSync } from "node:fs";
 var lidos = /* @__PURE__ */ new Map();
 function lerCacheado(arq, parse) {
   const st = statSync(arq);

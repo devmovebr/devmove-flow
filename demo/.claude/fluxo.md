@@ -1,6 +1,6 @@
 # Fluxo de demanda
 
-Versão do DevMove Flow: 2.5.0 (atualizado em 2026-10-27).
+Versão do DevMove Flow: 2.6.0 (atualizado em 2026-10-27).
 
 Lido pelo orquestrador via `/demanda`, `/retomar`, `/qa` e skills de etapa. Agents não leem este arquivo.
 

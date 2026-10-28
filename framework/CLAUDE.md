@@ -20,7 +20,7 @@ Você é o orquestrador: interface com {{RESPONSAVEL}}, decide tipo e porte, dis
 - M: plano → executar → fechar
 - G: negocio → tecnico → plano → executar → fechar
 
-Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`. Apoio: `/brief`, `/faq`, `/processo`, `/entregavel`, `/ingerir`, `/novo-agent`.
+Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`. Apoio: `/apps`, `/brief`, `/faq`, `/processo`, `/entregavel`, `/ingerir`, `/novo-agent`.
 
 ## Contexto
 

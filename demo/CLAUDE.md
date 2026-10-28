@@ -20,7 +20,7 @@ Ana roda só `/demanda <relato>` (ou `/retomar <dossiê>`). O orquestrador decid
 - M: plano → executar → fechar
 - G: negocio → tecnico → plano → executar → fechar
 
-Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`. Apoio: `/brief`, `/faq`, `/processo`, `/entregavel`, `/ingerir`, `/novo-agent`.
+Fora do fluxo de demanda: `/qa`, `/revisar-pr`, `/infra`. Apoio: `/apps`, `/brief`, `/faq`, `/processo`, `/entregavel`, `/ingerir`, `/novo-agent`.
 
 ## Contexto
 

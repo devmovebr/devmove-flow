@@ -1,0 +1,2 @@
+# Scripts rodam também no container Linux da UI: CRLF do checkout no Windows quebra o shebang.
+*.sh text eol=lf
