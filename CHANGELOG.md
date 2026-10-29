@@ -4,6 +4,17 @@ Cada versão lista as **Novidades** em itens verificáveis. Minor e patch chegam
 
 Versionamento: `major` muda estrutura (pastas, papéis, formato de arquivo) e pede migração; `minor` acrescenta regra compatível; `patch` corrige texto.
 
+## 2.7.0 (2026-10-28)
+
+Origem: instalar a ponte de agentes numa cópia era um roteiro manual sem o endereço do repositório, a ponte dependia do RabbitMQ do homelab, e não havia como conferir se ponte e UI estavam de pé.
+
+Novidades
+- [ ] `tools/ponte.sh` (`instalar`, `atualizar`, `status`, `desinstalar`): clona `github.com/devmovebr/mission-control-agents-bridge` em `.agents-bridge/`, põe no `.gitignore`, preenche `BRIDGE_SCOPE` e `BRIDGE_AMQP_URL` no `.env`, cria o `commands.local.json` com `/demanda` e registra o serviço que sobe com a máquina. Rodar de novo é seguro.
+- [ ] A ponte conecta no RabbitMQ do CloudAMQP por `amqps://`: a URL com as credenciais é o único dado de conexão, e a ponte declara a própria fila e os bindings ao conectar. Ponte já instalada: `tools/ponte.sh atualizar` e `tools/ponte.sh instalar --amqp-url <url>` (as chaves `BRIDGE_STOMP_*` saem do `.env`).
+- [ ] `tools/README.md`, seções Ponte de agentes e Ponte e UI de pé: instalação, comandos de verificação (`tools/ponte.sh status`, `tools/devmove-ui.sh status`, `/api/info`) e sintomas.
+- [ ] DevMove Flow UI, menu Aplicações: lista de apps redimensionável arrastando a borda (mínimo 260 px, duplo clique volta ao padrão, largura lembrada no navegador); play, parar e reiniciar selecionam a app; dica com nome, repositório, situação e porta ao passar o mouse.
+- [ ] DevMove Flow UI: título da aba com o projeto, `Demo - DevMove Painel`.
+
 ## 2.6.0 (2026-10-27)
 
 Origem: cada cópia subia os serviços com scripts próprios, sem padrão, e não havia como subir nem acompanhar o log de uma aplicação pela UI.
