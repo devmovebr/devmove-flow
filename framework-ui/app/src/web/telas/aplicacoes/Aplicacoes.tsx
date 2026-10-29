@@ -58,7 +58,9 @@ function LinhaApp({ app, selecionada, supervisorLigado }: { app: App; selecionad
   const aguardando = pedidoEm === assinatura || (acao.isPending && acao.variables?.app === app.nome)
   const transicao = app.situacao === 'subindo' || app.situacao === 'parando'
   const titulo = supervisorLigado ? '' : ' (supervisor desligado)'
+  const abrir = () => navegar(caminhos.aplicacao(p, app.nome))
   const executar = (a: AcaoApp) => {
+    if (!selecionada) abrir()
     setPedidoEm(assinatura)
     acao.mutate({ app: app.nome, acao: a }, { onError: () => setPedidoEm(null) })
   }
@@ -69,8 +71,9 @@ function LinhaApp({ app, selecionada, supervisorLigado }: { app: App; selecionad
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navegar(caminhos.aplicacao(p, app.nome))}
-      onKeyDown={(e) => e.key === 'Enter' && navegar(caminhos.aplicacao(p, app.nome))}
+      title={[app.nome, app.repo !== app.nome && app.repo, selos[app.situacao].rotulo, app.porta && `:${app.porta}`].filter(Boolean).join(' · ')}
+      onClick={abrir}
+      onKeyDown={(e) => e.key === 'Enter' && abrir()}
       className={`group flex cursor-pointer items-center gap-3 border-b border-borda px-4 py-3 ${selecionada ? 'bg-superficie-2' : 'hover:bg-superficie'}`}
     >
       <span
@@ -174,7 +177,60 @@ function BannerSupervisor() {
   )
 }
 
+const LARGURA = { padrao: 340, min: 260, max: 720, chave: 'devmove.aplicacoes.largura' }
+
+function salvarLargura(largura: number) {
+  try {
+    localStorage.setItem(LARGURA.chave, String(largura))
+  } catch {
+    // sem storage, a largura vale só até recarregar
+  }
+}
+
+function lerLargura() {
+  try {
+    const salva = Number(localStorage.getItem(LARGURA.chave))
+    return salva >= LARGURA.min && salva <= LARGURA.max ? salva : LARGURA.padrao
+  } catch {
+    return LARGURA.padrao
+  }
+}
+
+function useLarguraArrastavel() {
+  const [largura, setLargura] = useState(lerLargura)
+
+  const iniciar = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const x0 = e.clientX
+    const l0 = largura
+    let atual = l0
+    const mover = (ev: PointerEvent) => {
+      atual = Math.min(LARGURA.max, Math.max(LARGURA.min, l0 + ev.clientX - x0))
+      setLargura(atual)
+    }
+    const soltar = () => {
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+      document.body.style.removeProperty('cursor')
+      document.body.style.removeProperty('user-select')
+      salvarLargura(atual)
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+  }
+
+  const restaurar = () => {
+    setLargura(LARGURA.padrao)
+    salvarLargura(LARGURA.padrao)
+  }
+
+  return { largura, iniciar, restaurar }
+}
+
 export function Aplicacoes() {
+  const { largura, iniciar, restaurar } = useLarguraArrastavel()
   const { p, app: selecionada } = useRota()
   const { data, isPending, error } = useApps(p)
   const nome = selecionada || data?.apps[0]?.nome || ''
@@ -198,7 +254,7 @@ export function Aplicacoes() {
       )}
       {data && data.apps.length > 0 && (
         <div className="flex min-h-0 flex-1 border-t border-borda">
-          <aside className="w-[340px] shrink-0 overflow-y-auto border-r border-borda pb-4">
+          <aside style={{ width: largura }} className="shrink-0 overflow-y-auto border-r border-borda pb-4">
             {data.apps.map((a) => (
               <LinhaApp key={a.nome} app={a} selecionada={a.nome === nome} supervisorLigado={data.supervisor.ligado} />
             ))}
@@ -217,6 +273,15 @@ export function Aplicacoes() {
             )}
             <Subidas subidas={subidas} />
           </aside>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Redimensionar lista de aplicações"
+            title="Arraste para redimensionar · duplo clique volta ao padrão"
+            onPointerDown={iniciar}
+            onDoubleClick={restaurar}
+            className="relative z-10 -ml-[3px] w-[5px] shrink-0 cursor-col-resize transition-colors hover:bg-info/40 active:bg-info/60"
+          />
           {app ? <ConsoleApp key={app.nome} app={app} /> : <Vazio texto={`Aplicação ${selecionada} não está em tools/.local/apps.json.`} />}
         </div>
       )}

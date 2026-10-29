@@ -1,7 +1,7 @@
 import { PanelLeftClose } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router'
-import { useModulo } from '../util/caminhos'
+import { useModulo, useRota } from '../util/caminhos'
 import { Sidebar } from './Sidebar'
 import { ContextoTopo } from './contextoTopo'
 
@@ -10,6 +10,11 @@ export function Shell() {
   const [acoes, setAcoes] = useState<HTMLElement | null>(null)
   const [recolhida, setRecolhida] = useState(false)
   const modulo = useModulo()
+  const { p } = useRota()
+
+  useEffect(() => {
+    document.title = p ? `${p.charAt(0).toUpperCase()}${p.slice(1)} - DevMove Painel` : 'DevMove Painel'
+  }, [p])
 
   return (
     <ContextoTopo.Provider value={{ migalhas, acoes }}>
